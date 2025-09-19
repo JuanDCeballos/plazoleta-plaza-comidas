@@ -1,19 +1,17 @@
-package co.juan.plazacomidas.model.plato;
+package co.juan.plazacomidas.api.dto.plato;
 
-import lombok.Builder;
 import lombok.AllArgsConstructor;
-import lombok.Getter;
+import lombok.Builder;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 import java.math.BigDecimal;
 
-@Getter
-@Setter
-@NoArgsConstructor
+@Data
+@Builder
 @AllArgsConstructor
-@Builder(toBuilder = true)
-public class Plato {
+@NoArgsConstructor
+public class PlatoResponseDto {
 
     private Long idPlato;
     private String nombre;

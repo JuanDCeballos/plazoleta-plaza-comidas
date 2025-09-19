@@ -22,5 +22,14 @@ public class PlatoEntity {
     private BigDecimal precio;
     private String descripcion;
     private String urlImagen;
-    private Long categoria; //TODO: REVISAR COMO SE VAN A MANEJAR ESTAS CATEGORIAS
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_categoria", nullable = false)
+    private CategoriaEntity categoria;
+
+    private boolean activo;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_restaurante", nullable = false)
+    private RestauranteEntity restaurante;
 }
