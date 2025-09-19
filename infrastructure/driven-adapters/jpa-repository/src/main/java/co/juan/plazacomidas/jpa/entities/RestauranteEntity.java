@@ -3,6 +3,8 @@ package co.juan.plazacomidas.jpa.entities;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.List;
+
 @Entity
 @Table(name = "restaurantes")
 @AllArgsConstructor
@@ -22,4 +24,7 @@ public class RestauranteEntity {
     private String telefono;
     private String urlLogo;
     private Long idUsuario;
+
+    @OneToMany(mappedBy = "restaurante", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<PlatoEntity> platos;
 }

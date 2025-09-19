@@ -19,4 +19,9 @@ public class JpaRestauranteRepositoryAdapter extends AdapterOperations<Restauran
     public Restaurante crearRestaurante(Restaurante restaurante) {
         return save(restaurante);
     }
+
+    @Override
+    public boolean existePorId(Long idRestaurante) {
+        return repository.existsById(idRestaurante);
+    }
 }

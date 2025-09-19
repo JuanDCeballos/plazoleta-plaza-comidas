@@ -21,7 +21,7 @@ public class RestauranteUseCase {
             throw new ResourceNotFoundException("El usuario con el ID proporcionado no existe.");
         }
 
-        if (usuario.getIdRol() != 1) {
+        if (usuario.getIdRol() != 2) {
             throw new IllegalArgumentException("El rol debe ser propietario");
         }
 
