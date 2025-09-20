@@ -11,6 +11,8 @@ import co.juan.plazacomidas.model.plato.gateways.PlatoRepository;
 import org.reactivecommons.utils.ObjectMapper;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
 @Repository
 public class JpaPlatoRepositoryAdapter extends AdapterOperations<Plato, PlatoEntity, Long, JpaPlatoRepository>
         implements PlatoRepository {
@@ -29,7 +31,7 @@ public class JpaPlatoRepositoryAdapter extends AdapterOperations<Plato, PlatoEnt
     }
 
     @Override
-    public Plato crearPlato(Plato plato) {
+    public Plato guardarPlato(Plato plato) {
         PlatoEntity platoEntity = platoEntityMapper.toEntity(plato);
 
         RestauranteEntity restauranteEntity = jpaRestauranteRepository.findById(plato.getIdRestaurante())
@@ -43,5 +45,11 @@ public class JpaPlatoRepositoryAdapter extends AdapterOperations<Plato, PlatoEnt
         PlatoEntity platoGuardado = repository.save(platoEntity);
 
         return platoEntityMapper.toDomain(platoGuardado);
+    }
+
+    @Override
+    public Optional<Plato> buscarPorId(Long idPlato) {
+        return repository.findById(idPlato)
+                .map(platoEntityMapper::toDomain);
     }
 }

@@ -27,6 +27,29 @@ public class PlatoUseCase {
         plato.setIdRestaurante(idRestaurante);
         plato.setActivo(true);
 
-        return platoRepository.crearPlato(plato);
+        return platoRepository.guardarPlato(plato);
+    }
+
+    public Plato actualizarPlato(Long idRestaurante, Long idPlato, Plato platoConNuevosDatos) {
+        if (!restauranteRepository.existePorId(idRestaurante)) {
+            throw new ResourceNotFoundException("Restaurante no encontrado con el id: " + idRestaurante);
+        }
+
+        Plato platoExistente = platoRepository.buscarPorId(idPlato)
+                .orElseThrow(() -> new ResourceNotFoundException("Plato no encontrado con el id: " + idPlato));
+
+        if (!platoExistente.getIdRestaurante().equals(idRestaurante)) {
+            throw new IllegalArgumentException("El plato no pertenece al restaurante especificado.");
+        }
+
+        if (platoConNuevosDatos.getPrecio() != null) {
+            platoExistente.setPrecio(platoConNuevosDatos.getPrecio());
+        }
+
+        if (platoConNuevosDatos.getDescripcion() != null) {
+            platoExistente.setDescripcion(platoConNuevosDatos.getDescripcion());
+        }
+
+        return platoRepository.guardarPlato(platoExistente);
     }
 }
