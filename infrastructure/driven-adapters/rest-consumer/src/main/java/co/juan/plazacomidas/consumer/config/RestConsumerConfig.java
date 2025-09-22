@@ -11,10 +11,17 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class RestConsumerConfig {
 
+    private final AuthTokenInterceptor authTokenInterceptor;
+
+    public RestConsumerConfig(AuthTokenInterceptor authTokenInterceptor) {
+        this.authTokenInterceptor = authTokenInterceptor;
+    }
+
     @Bean
     public OkHttpClient getHttpClient(OkHttpMetricsEventListener listener) {
         return new OkHttpClient.Builder()
                 .eventListener(listener)
+                .addInterceptor(this.authTokenInterceptor)
                 .build();
     }
 
