@@ -73,7 +73,7 @@ class RestauranteUseCaseTest {
 
     @Test
     void crearRestaurante_retornaException_usuarioNull() {
-        when(usuarioGateway.obtenerUsuarioPorId(anyLong())).thenReturn(null);
+        when(usuarioGateway.obtenerUsuarioPorId(anyLong())).thenReturn(Optional.empty());
 
         ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () -> {
             restauranteUseCase.crearRestaurante(restaurante);

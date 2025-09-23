@@ -3,6 +3,7 @@ package co.juan.plazacomidas.config;
 import co.juan.plazacomidas.model.categoria.gateways.CategoriaRepository;
 import co.juan.plazacomidas.model.plato.gateways.PlatoRepository;
 import co.juan.plazacomidas.model.restaurante.gateways.RestauranteRepository;
+import co.juan.plazacomidas.model.restauranteempleado.gateways.RestauranteEmpleadoRepository;
 import co.juan.plazacomidas.model.usuario.gateways.UsuarioGateway;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -59,6 +60,11 @@ public class UseCasesConfigTest {
         @Bean
         public CategoriaRepository categoriaRepository() {
             return Mockito.mock(CategoriaRepository.class);
+        }
+
+        @Bean
+        public RestauranteEmpleadoRepository restauranteEmpleadoRepository() {
+            return Mockito.mock(RestauranteEmpleadoRepository.class);
         }
     }
 

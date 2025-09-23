@@ -52,4 +52,21 @@ public class PlatoUseCase {
 
         return platoRepository.guardarPlato(platoExistente);
     }
+
+    public Plato actualizarEstadoPlato(Long idRestaurante, Long idPlato, boolean estado) {
+        if (!restauranteRepository.existePorId(idRestaurante)) {
+            throw new ResourceNotFoundException("Restaurante no encontrado con el id: " + idRestaurante);
+        }
+
+        Plato platoExistente = platoRepository.buscarPorId(idPlato)
+                .orElseThrow(() -> new ResourceNotFoundException("Plato no encontrado con el id: " + idPlato));
+
+        if (!platoExistente.getIdRestaurante().equals(idRestaurante)) {
+            throw new IllegalArgumentException("El plato no pertenece al restaurante especificado.");
+        }
+
+        platoExistente.setActivo(estado);
+
+        return platoRepository.guardarPlato(platoExistente);
+    }
 }
