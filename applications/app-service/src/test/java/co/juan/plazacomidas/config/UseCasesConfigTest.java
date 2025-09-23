@@ -1,10 +1,16 @@
 package co.juan.plazacomidas.config;
 
+import co.juan.plazacomidas.model.categoria.gateways.CategoriaRepository;
+import co.juan.plazacomidas.model.plato.gateways.PlatoRepository;
+import co.juan.plazacomidas.model.restaurante.gateways.RestauranteRepository;
+import co.juan.plazacomidas.model.usuario.gateways.UsuarioGateway;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class UseCasesConfigTest {
@@ -33,6 +39,26 @@ public class UseCasesConfigTest {
         @Bean
         public MyUseCase myUseCase() {
             return new MyUseCase();
+        }
+
+        @Bean
+        public RestauranteRepository restauranteRepository() {
+            return Mockito.mock(RestauranteRepository.class);
+        }
+
+        @Bean
+        public UsuarioGateway usuarioGateway() {
+            return Mockito.mock(UsuarioGateway.class);
+        }
+
+        @Bean
+        public PlatoRepository platoRepository() {
+            return Mockito.mock(PlatoRepository.class);
+        }
+
+        @Bean
+        public CategoriaRepository categoriaRepository() {
+            return Mockito.mock(CategoriaRepository.class);
         }
     }
 

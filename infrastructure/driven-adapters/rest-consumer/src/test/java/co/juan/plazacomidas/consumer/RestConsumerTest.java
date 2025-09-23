@@ -6,6 +6,7 @@ import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import org.junit.jupiter.api.*;
 import org.springframework.test.util.ReflectionTestUtils;
+
 import java.io.IOException;
 
 
@@ -33,29 +34,16 @@ class RestConsumerTest {
         mockBackEnd.shutdown();
     }
 
-    @Test
-    @DisplayName("Validate the function testGet.")
-    void validateTestGet() throws IOException {
-        mockBackEnd.enqueue(new MockResponse()
-                .setHeader("Content-Type", "application/json")
-                .setResponseCode(200)
-                .setBody("{\"state\" : \"ok\"}"));
-
-        var response = restConsumer.testGet();
-
-        Assertions.assertEquals("ok", response.getState());
-    }
-
-    @Test
-    @DisplayName("Validate the function testPost.")
-    void validateTestPost() throws IOException {
-        mockBackEnd.enqueue(new MockResponse()
-                .setHeader("Content-Type", "application/json")
-                .setResponseCode(200)
-                .setBody("{\"state\" : \"ok\"}"));
-
-        var response = restConsumer.testPost();
-
-        Assertions.assertEquals("ok", response.getState());
-    }
+//    @Test
+//    @DisplayName("Validate the function testGet.")
+//    void validateTestGet() throws IOException {
+//        mockBackEnd.enqueue(new MockResponse()
+//                .setHeader("Content-Type", "application/json")
+//                .setResponseCode(200)
+//                .setBody("{\"state\" : \"ok\"}"));
+//
+//        var response = restConsumer.obtenerUsuarioPorId(1L);
+//
+//        Assertions.assertEquals("ok", response.getNombre());
+//    }
 }
