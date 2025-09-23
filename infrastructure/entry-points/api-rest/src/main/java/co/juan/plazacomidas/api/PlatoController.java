@@ -12,6 +12,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -23,7 +24,9 @@ public class PlatoController {
     private final PlatoMapper platoMapper;
 
     @PostMapping("/restaurantes/{idRestaurante}/platos")
-    public ResponseEntity<ApiResponse<PlatoResponseDto>> crearPlato(@PathVariable("idRestaurante") Long idRestaurante, @Valid @RequestBody PlatoRequestDto requestDto) {
+    @PreAuthorize("hasAuthority('PROPIETARIO')")
+    public ResponseEntity<ApiResponse<PlatoResponseDto>> crearPlato(@PathVariable("idRestaurante") Long idRestaurante,
+                                                                    @Valid @RequestBody PlatoRequestDto requestDto) {
         Plato plato = platoMapper.toPlato(requestDto);
 
         Plato platoGuardado = platoUseCase.crearPlato(idRestaurante, plato);
@@ -36,6 +39,7 @@ public class PlatoController {
     }
 
     @PutMapping("/restaurantes/{idRestaurante}/platos/{idPlato}")
+    @PreAuthorize("hasAuthority('PROPIETARIO')")
     public ResponseEntity<ApiResponse<PlatoResponseDto>> actualizarPlato(@PathVariable("idRestaurante") Long idRestaurante,
                                                                          @PathVariable("idPlato") Long idPlato,
                                                                          @Valid @RequestBody ModificarPlatoRequestDto requestDto) {

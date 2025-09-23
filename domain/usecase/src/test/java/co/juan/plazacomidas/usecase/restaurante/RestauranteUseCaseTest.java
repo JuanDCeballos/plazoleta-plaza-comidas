@@ -13,6 +13,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -58,7 +59,7 @@ class RestauranteUseCaseTest {
 
     @Test
     void crearRestaurante() {
-        when(usuarioGateway.obtenerUsuarioPorId(anyLong())).thenReturn(usuario);
+        when(usuarioGateway.obtenerUsuarioPorId(anyLong())).thenReturn(Optional.of(usuario));
         when(restauranteRepository.crearRestaurante(any(Restaurante.class))).thenReturn(restaurante);
 
         Restaurante restauranteCreado = restauranteUseCase.crearRestaurante(restaurante);
@@ -87,7 +88,7 @@ class RestauranteUseCaseTest {
     void crearRestaurante_retornaException_usuarioDiferenteAPropietario() {
         usuario.setIdRol(1L);
 
-        when(usuarioGateway.obtenerUsuarioPorId(anyLong())).thenReturn(usuario);
+        when(usuarioGateway.obtenerUsuarioPorId(anyLong())).thenReturn(Optional.of(usuario));
 
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             restauranteUseCase.crearRestaurante(restaurante);

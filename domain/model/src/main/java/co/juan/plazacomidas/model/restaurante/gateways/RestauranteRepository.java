@@ -7,4 +7,6 @@ public interface RestauranteRepository {
     Restaurante crearRestaurante(Restaurante restaurante);
 
     boolean existePorId(Long idRestaurante);
+
+    Restaurante obtenerById(Long idRestaurante);
 }

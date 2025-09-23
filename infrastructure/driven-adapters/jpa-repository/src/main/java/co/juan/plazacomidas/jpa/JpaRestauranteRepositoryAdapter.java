@@ -24,4 +24,9 @@ public class JpaRestauranteRepositoryAdapter extends AdapterOperations<Restauran
     public boolean existePorId(Long idRestaurante) {
         return repository.existsById(idRestaurante);
     }
+
+    @Override
+    public Restaurante obtenerById(Long idRestaurante) {
+        return findById(idRestaurante);
+    }
 }

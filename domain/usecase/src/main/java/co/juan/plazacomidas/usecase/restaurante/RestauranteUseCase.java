@@ -15,11 +15,8 @@ public class RestauranteUseCase {
 
     public Restaurante crearRestaurante(Restaurante restaurante) {
 
-        Usuario usuario = usuarioGateway.obtenerUsuarioPorId(restaurante.getIdUsuario());
-
-        if (usuario == null) {
-            throw new ResourceNotFoundException("El usuario con el ID proporcionado no existe.");
-        }
+        Usuario usuario = usuarioGateway.obtenerUsuarioPorId(restaurante.getIdUsuario())
+                .orElseThrow(() -> new ResourceNotFoundException("El usuario con el ID proporcionado no existe."));
 
         if (usuario.getIdRol() != 2) {
             throw new IllegalArgumentException("El rol debe ser propietario");
