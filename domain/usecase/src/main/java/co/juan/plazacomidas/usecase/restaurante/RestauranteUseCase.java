@@ -1,6 +1,7 @@
 package co.juan.plazacomidas.usecase.restaurante;
 
 import co.juan.plazacomidas.model.exceptions.ResourceNotFoundException;
+import co.juan.plazacomidas.model.pagina.Pagina;
 import co.juan.plazacomidas.model.restaurante.Restaurante;
 import co.juan.plazacomidas.model.restaurante.gateways.RestauranteRepository;
 import co.juan.plazacomidas.model.usuario.Usuario;
@@ -23,5 +24,9 @@ public class RestauranteUseCase {
         }
 
         return restauranteRepository.crearRestaurante(restaurante);
+    }
+
+    public Pagina<Restaurante> listarRestaurantes(int page, int size) {
+        return restauranteRepository.listarRestaurantesPaginados(page, size);
     }
 }

@@ -1,6 +1,7 @@
 package co.juan.plazacomidas.usecase.restaurante;
 
 import co.juan.plazacomidas.model.exceptions.ResourceNotFoundException;
+import co.juan.plazacomidas.model.pagina.Pagina;
 import co.juan.plazacomidas.model.restaurante.Restaurante;
 import co.juan.plazacomidas.model.restaurante.gateways.RestauranteRepository;
 import co.juan.plazacomidas.model.usuario.Usuario;
@@ -13,6 +14,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -34,6 +36,10 @@ class RestauranteUseCaseTest {
 
     private Restaurante restaurante;
     private Usuario usuario;
+    private Pagina<Restaurante> restaurantePagina;
+
+    private int page = 0;
+    private int size = 5;
 
     @BeforeEach
     void initMocks() {
@@ -55,6 +61,13 @@ class RestauranteUseCaseTest {
         usuario.setFechaNacimiento(LocalDate.of(2002, 9, 12));
         usuario.setCorreo("juan.ceballos@correo.com.co");
         usuario.setIdRol(2L);
+
+        restaurantePagina = new Pagina<>();
+        restaurantePagina.setContenido(List.of(restaurante));
+        restaurantePagina.setTotalElementos(3L);
+        restaurantePagina.setTotalPaginas(2);
+        restaurantePagina.setNumeroPagina(0);
+        restaurantePagina.setTamanoPagina(5);
     }
 
     @Test
@@ -97,5 +110,18 @@ class RestauranteUseCaseTest {
 
         verify(usuarioGateway, times(1)).obtenerUsuarioPorId(anyLong());
         verify(restauranteRepository, times(0)).crearRestaurante(any(Restaurante.class));
+    }
+
+    @Test
+    void listarRestaurantes() {
+        when(restauranteRepository.listarRestaurantesPaginados(anyInt(), anyInt())).thenReturn(restaurantePagina);
+
+        Pagina<Restaurante> restaurantePaginados = restauranteUseCase.listarRestaurantes(page, size);
+        assertNotNull(restaurantePaginados);
+        assertEquals("Burger", restaurantePaginados.getContenido().getFirst().getNombre());
+        assertEquals(3L, restaurantePaginados.getTotalElementos());
+        assertEquals(2, restaurantePaginados.getTotalPaginas());
+
+        verify(restauranteRepository, times(1)).listarRestaurantesPaginados(anyInt(), anyInt());
     }
 }

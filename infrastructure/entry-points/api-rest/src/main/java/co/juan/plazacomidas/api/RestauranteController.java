@@ -1,12 +1,14 @@
 package co.juan.plazacomidas.api;
 
 import co.juan.plazacomidas.api.dto.ApiResponse;
+import co.juan.plazacomidas.api.dto.restaurante.RestauranteListadoDto;
 import co.juan.plazacomidas.api.dto.restaurante.RestauranteRequestDto;
 import co.juan.plazacomidas.api.dto.restaurante.RestauranteResponseDto;
 import co.juan.plazacomidas.api.dto.retauranteempleado.RestauranteEmpleadoRequestDto;
 import co.juan.plazacomidas.api.dto.retauranteempleado.RestauranteEmpleadoResponseDto;
 import co.juan.plazacomidas.api.utils.RestauranteEmpleadoMapper;
 import co.juan.plazacomidas.api.utils.RestauranteMapper;
+import co.juan.plazacomidas.model.pagina.Pagina;
 import co.juan.plazacomidas.model.restaurante.Restaurante;
 import co.juan.plazacomidas.model.restauranteempleado.RestauranteEmpleado;
 import co.juan.plazacomidas.usecase.restaurante.RestauranteUseCase;
@@ -20,6 +22,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping(value = "/api/restaurantes", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -65,5 +69,28 @@ public class RestauranteController {
         ApiResponse<RestauranteEmpleadoResponseDto> apiResponse = new ApiResponse<>(responseDto);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(apiResponse);
+    }
+
+    @GetMapping("/")
+    @PreAuthorize("hasAuthority('CLIENTE')")
+    public ResponseEntity<ApiResponse<Pagina<RestauranteListadoDto>>> listarRestaurantes(
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size) {
+
+        Pagina<Restaurante> paginaDeDominio = restauranteUseCase.listarRestaurantes(page, size);
+
+        List<RestauranteListadoDto> contenidoDto = paginaDeDominio.getContenido().stream()
+                .map(restauranteMapper::toListadoRestaurante)
+                .toList();
+
+        Pagina<RestauranteListadoDto> paginaDeRespuesta = Pagina.<RestauranteListadoDto>builder()
+                .contenido(contenidoDto)
+                .totalElementos(paginaDeDominio.getTotalElementos())
+                .totalPaginas(paginaDeDominio.getTotalPaginas())
+                .numeroPagina(paginaDeDominio.getNumeroPagina())
+                .tamanoPagina(paginaDeDominio.getTamanoPagina())
+                .build();
+
+        return ResponseEntity.ok(new ApiResponse<>(paginaDeRespuesta));
     }
 }
