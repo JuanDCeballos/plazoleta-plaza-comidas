@@ -1,11 +1,9 @@
 package co.juan.plazacomidas.api;
 
 import co.juan.plazacomidas.api.dto.ApiResponse;
-import co.juan.plazacomidas.api.dto.plato.ActualizarEstadoPlatoDto;
-import co.juan.plazacomidas.api.dto.plato.ModificarPlatoRequestDto;
-import co.juan.plazacomidas.api.dto.plato.PlatoRequestDto;
-import co.juan.plazacomidas.api.dto.plato.PlatoResponseDto;
+import co.juan.plazacomidas.api.dto.plato.*;
 import co.juan.plazacomidas.api.utils.PlatoMapper;
+import co.juan.plazacomidas.model.pagina.Pagina;
 import co.juan.plazacomidas.model.plato.Plato;
 import co.juan.plazacomidas.usecase.plato.PlatoUseCase;
 import jakarta.validation.Valid;
@@ -15,6 +13,9 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping(value = "/api", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -60,7 +61,7 @@ public class PlatoController {
     public ResponseEntity<ApiResponse<PlatoResponseDto>> actualizarEstadoPlato(@PathVariable("idRestaurante") Long idRestaurante,
                                                                                @PathVariable("idPlato") Long idPlato,
                                                                                @Valid @RequestBody ActualizarEstadoPlatoDto requestDto) {
-        
+
         Plato platoActualizado = platoUseCase.actualizarEstadoPlato(idRestaurante, idPlato, requestDto.getActivo());
 
         PlatoResponseDto responseDto = platoMapper.toPlatoResponseDto(platoActualizado);
@@ -68,5 +69,34 @@ public class PlatoController {
         ApiResponse<PlatoResponseDto> apiResponse = new ApiResponse<>(responseDto);
 
         return ResponseEntity.status(HttpStatus.OK).body(apiResponse);
+    }
+
+    @GetMapping("/restaurantes/{idRestaurante}/platos")
+    @PreAuthorize("hasAuthority('CLIENTE')")
+    public ResponseEntity<ApiResponse<Pagina<PlatoMenuDto>>> listarMenu(
+            @PathVariable("idRestaurante") Long idRestaurante,
+            @RequestParam(value = "idCategoria", required = false) Long idCategoria,
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size) {
+
+        Pagina<Plato> paginaDeDominio = platoUseCase.listarPlatosDeRestaurante(
+                idRestaurante,
+                Optional.ofNullable(idCategoria),
+                page,
+                size);
+
+        List<PlatoMenuDto> contenidoDto = paginaDeDominio.getContenido().stream()
+                .map(platoMapper::toPlatoMenuDto)
+                .toList();
+
+        Pagina<PlatoMenuDto> paginaDeRespuesta = new Pagina<>(
+                contenidoDto,
+                paginaDeDominio.getTotalElementos(),
+                paginaDeDominio.getTotalPaginas(),
+                paginaDeDominio.getNumeroPagina(),
+                paginaDeDominio.getTamanoPagina()
+        );
+
+        return ResponseEntity.ok(new ApiResponse<>(paginaDeRespuesta));
     }
 }

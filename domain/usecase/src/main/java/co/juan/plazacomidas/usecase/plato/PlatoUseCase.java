@@ -2,10 +2,13 @@ package co.juan.plazacomidas.usecase.plato;
 
 import co.juan.plazacomidas.model.categoria.gateways.CategoriaRepository;
 import co.juan.plazacomidas.model.exceptions.ResourceNotFoundException;
+import co.juan.plazacomidas.model.pagina.Pagina;
 import co.juan.plazacomidas.model.plato.Plato;
 import co.juan.plazacomidas.model.plato.gateways.PlatoRepository;
 import co.juan.plazacomidas.model.restaurante.gateways.RestauranteRepository;
 import lombok.RequiredArgsConstructor;
+
+import java.util.Optional;
 
 @RequiredArgsConstructor
 public class PlatoUseCase {
@@ -68,5 +71,13 @@ public class PlatoUseCase {
         platoExistente.setActivo(estado);
 
         return platoRepository.guardarPlato(platoExistente);
+    }
+
+    public Pagina<Plato> listarPlatosDeRestaurante(Long idRestaurante, Optional<Long> idCategoria, int page, int size) {
+        if (!restauranteRepository.existePorId(idRestaurante)) {
+            throw new ResourceNotFoundException("Restaurante no encontrado con el id: " + idRestaurante);
+        }
+
+        return platoRepository.listarPlatosPorRestaurante(idRestaurante, idCategoria, page, size);
     }
 }
