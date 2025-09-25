@@ -10,6 +10,8 @@ import co.juan.plazacomidas.model.restauranteempleado.gateways.RestauranteEmplea
 import org.reactivecommons.utils.ObjectMapper;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
 @Repository
 public class JpaRestauranteEmpleadoRepositoryAdapter extends AdapterOperations<RestauranteEmpleado, RestauranteEmpleadoEntity, Long, JpaRestauranteEmpleadoRepository>
         implements RestauranteEmpleadoRepository {
@@ -36,7 +38,13 @@ public class JpaRestauranteEmpleadoRepositoryAdapter extends AdapterOperations<R
         restauranteEmpleadoEntity.setRestaurante(restauranteEntity);
 
         RestauranteEmpleadoEntity restauranteEmpleadoGuardado = repository.save(restauranteEmpleadoEntity);
-        
+
         return restauranteEmpleadoJpaMapper.toDomain(restauranteEmpleadoGuardado);
+    }
+
+    @Override
+    public Optional<RestauranteEmpleado> buscarByIdUsuarioEmpleado(Long idUsuarioEmpleado) {
+        return repository.findByIdUsuarioEmpleado(idUsuarioEmpleado)
+                .map(restauranteEmpleadoJpaMapper::toDomain);
     }
 }

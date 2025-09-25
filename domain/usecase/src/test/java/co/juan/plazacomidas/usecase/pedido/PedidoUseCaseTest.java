@@ -1,12 +1,15 @@
 package co.juan.plazacomidas.usecase.pedido;
 
 import co.juan.plazacomidas.model.exceptions.ResourceNotFoundException;
+import co.juan.plazacomidas.model.pagina.Pagina;
 import co.juan.plazacomidas.model.pedido.Pedido;
 import co.juan.plazacomidas.model.pedido.gateways.PedidoRepository;
 import co.juan.plazacomidas.model.pedidoplato.PedidoPlato;
 import co.juan.plazacomidas.model.plato.Plato;
 import co.juan.plazacomidas.model.plato.gateways.PlatoRepository;
 import co.juan.plazacomidas.model.restaurante.gateways.RestauranteRepository;
+import co.juan.plazacomidas.model.restauranteempleado.RestauranteEmpleado;
+import co.juan.plazacomidas.model.restauranteempleado.gateways.RestauranteEmpleadoRepository;
 import co.juan.plazacomidas.model.usuario.Usuario;
 import co.juan.plazacomidas.model.usuario.gateways.UsuarioGateway;
 import co.juan.plazacomidas.model.utils.EstadoPedido;
@@ -46,11 +49,18 @@ class PedidoUseCaseTest {
     @Mock
     UsuarioGateway usuarioGateway;
 
+    @Mock
+    RestauranteEmpleadoRepository restauranteEmpleadoRepository;
+
     private Pedido pedido;
     private Usuario usuario;
     private Plato plato;
+    private RestauranteEmpleado restauranteEmpleado;
+    private Pagina<Pedido> pedidosPaginadosYFiltrados;
 
     private final String emailCliente = "juan.ceballos@correo.com.co";
+    private int page = 0;
+    private int size = 5;
 
     @BeforeEach
     void initMocks() {
@@ -88,6 +98,18 @@ class PedidoUseCaseTest {
         plato.setCategoria(1L);
         plato.setActivo(true);
         plato.setIdRestaurante(1L);
+
+        restauranteEmpleado = new RestauranteEmpleado();
+        restauranteEmpleado.setId(1L);
+        restauranteEmpleado.setIdRestaurante(1L);
+        restauranteEmpleado.setIdUsuarioEmpleado(1L);
+
+        pedidosPaginadosYFiltrados = new Pagina<>();
+        pedidosPaginadosYFiltrados.setContenido(List.of(pedido));
+        pedidosPaginadosYFiltrados.setTotalElementos(1L);
+        pedidosPaginadosYFiltrados.setTotalPaginas(2);
+        pedidosPaginadosYFiltrados.setNumeroPagina(0);
+        pedidosPaginadosYFiltrados.setTamanoPagina(5);
     }
 
     @Test
@@ -164,5 +186,26 @@ class PedidoUseCaseTest {
         verify(restauranteRepository, times(1)).existePorId(anyLong());
         verify(platoRepository, times(1)).buscarPorId(anyLong());
         verify(pedidoRepository, times(0)).guardarPedido(any(Pedido.class));
+    }
+
+    @Test
+    void listarPedidosPorEstado() {
+        when(usuarioGateway.obtenerUsuarioPorCorreo(anyString())).thenReturn(Optional.of(usuario));
+        when(restauranteEmpleadoRepository.buscarByIdUsuarioEmpleado(anyLong()))
+                .thenReturn(Optional.of(restauranteEmpleado));
+        when(pedidoRepository.listarPedidosPorRestauranteYEstado(
+                anyLong(), any(), anyInt(), anyInt())).thenReturn(pedidosPaginadosYFiltrados);
+
+        Pagina<Pedido> pedidosPagina = pedidoUseCase.listarPedidosPorEstado(
+                emailCliente, Optional.of(EstadoPedido.PENDIENTE), page, size);
+        assertNotNull(pedidosPagina);
+        assertEquals(EstadoPedido.PENDIENTE, pedidosPagina.getContenido().getFirst().getEstado());
+        assertEquals(1L, pedidosPagina.getTotalElementos());
+        assertEquals(2, pedidosPagina.getTotalPaginas());
+
+        verify(usuarioGateway, times(1)).obtenerUsuarioPorCorreo(anyString());
+        verify(restauranteEmpleadoRepository, times(1)).buscarByIdUsuarioEmpleado(anyLong());
+        verify(pedidoRepository, times(1)).listarPedidosPorRestauranteYEstado(
+                anyLong(), any(), anyInt(), anyInt());
     }
 }

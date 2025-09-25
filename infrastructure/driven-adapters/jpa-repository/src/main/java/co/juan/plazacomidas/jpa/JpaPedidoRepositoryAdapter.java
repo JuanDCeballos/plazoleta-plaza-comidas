@@ -7,14 +7,19 @@ import co.juan.plazacomidas.jpa.entities.RestauranteEntity;
 import co.juan.plazacomidas.jpa.helper.AdapterOperations;
 import co.juan.plazacomidas.jpa.utils.PedidoJpaMapper;
 import co.juan.plazacomidas.model.exceptions.ResourceNotFoundException;
+import co.juan.plazacomidas.model.pagina.Pagina;
 import co.juan.plazacomidas.model.pedido.Pedido;
 import co.juan.plazacomidas.model.pedido.gateways.PedidoRepository;
 import co.juan.plazacomidas.model.utils.EstadoPedido;
 import org.reactivecommons.utils.ObjectMapper;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Repository
@@ -72,5 +77,29 @@ public class JpaPedidoRepositoryAdapter extends AdapterOperations<Pedido, Pedido
         );
 
         return repository.clienteTienePedidoActivo(idCliente, estados);
+    }
+
+    @Override
+    public Pagina<Pedido> listarPedidosPorRestauranteYEstado(
+            Long idRestaurante, Optional<EstadoPedido> estado, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+
+        Page<PedidoEntity> pageCustom = repository.findByRestauranteAndEstadoOptional(
+                idRestaurante,
+                estado.orElse(null),
+                pageable
+        );
+
+        List<Pedido> contenido = pageCustom.getContent().stream()
+                .map(pedidoJpaMapper::toDomain)
+                .toList();
+
+        return Pagina.<Pedido>builder()
+                .contenido(contenido)
+                .totalElementos(pageCustom.getTotalElements())
+                .totalPaginas(pageCustom.getTotalPages())
+                .numeroPagina(pageCustom.getNumber())
+                .tamanoPagina(pageCustom.getSize())
+                .build();
     }
 }
