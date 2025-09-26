@@ -134,6 +134,21 @@ class PlatoUseCaseTest {
     }
 
     @Test
+    void actualizarPlato_retornaException_cuandoNoExistePlato() {
+        when(restauranteRepository.existePorId(anyLong())).thenReturn(true);
+        when(platoRepository.buscarPorId(anyLong())).thenReturn(Optional.empty());
+
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () ->
+                platoUseCase.actualizarPlato(idRestaurante, idPlato, platoConNuevosDatos)
+        );
+        assertEquals("Plato no encontrado con el id: " + idPlato, exception.getMessage());
+
+        verify(restauranteRepository, times(1)).existePorId(anyLong());
+        verify(platoRepository, times(1)).buscarPorId(anyLong());
+        verify(platoRepository, times(0)).guardarPlato(any(Plato.class));
+    }
+
+    @Test
     void actualizarPlato_retornaException_cuandoNoExisteRestaurante() {
         when(restauranteRepository.existePorId(anyLong())).thenReturn(false);
 
@@ -157,7 +172,7 @@ class PlatoUseCaseTest {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             platoUseCase.actualizarPlato(idRestaurante, idPlato, platoConNuevosDatos);
         });
-        assertEquals("El plato no pertenece al restaurante especificado.", exception.getMessage());
+        assertEquals("El plato " + plato.getNombre() + " no pertenece a este restaurante.", exception.getMessage());
 
         verify(restauranteRepository, times(1)).existePorId(anyLong());
         verify(platoRepository, times(1)).buscarPorId(anyLong());
@@ -224,7 +239,7 @@ class PlatoUseCaseTest {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             platoUseCase.actualizarEstadoPlato(idRestaurante, idPlato, estado);
         });
-        assertEquals("El plato no pertenece al restaurante especificado.", exception.getMessage());
+        assertEquals("El plato " + plato.getNombre() + " no pertenece a este restaurante.", exception.getMessage());
 
         verify(restauranteRepository, times(1)).existePorId(anyLong());
         verify(platoRepository, times(1)).buscarPorId(anyLong());

@@ -91,7 +91,7 @@ class RestauranteUseCaseTest {
         ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () -> {
             restauranteUseCase.crearRestaurante(restaurante);
         });
-        assertEquals("El usuario con el ID proporcionado no existe.", exception.getMessage());
+        assertEquals("Usuario no encontrado con el id: " + restaurante.getIdUsuario(), exception.getMessage());
 
         verify(usuarioGateway, times(1)).obtenerUsuarioPorId(anyLong());
         verify(restauranteRepository, times(0)).crearRestaurante(any(Restaurante.class));

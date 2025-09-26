@@ -6,6 +6,8 @@ import co.juan.plazacomidas.model.restaurante.Restaurante;
 import co.juan.plazacomidas.model.restaurante.gateways.RestauranteRepository;
 import co.juan.plazacomidas.model.usuario.Usuario;
 import co.juan.plazacomidas.model.usuario.gateways.UsuarioGateway;
+import co.juan.plazacomidas.model.utils.MensajesEnum;
+import co.juan.plazacomidas.model.utils.RolEnum;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
@@ -17,10 +19,11 @@ public class RestauranteUseCase {
     public Restaurante crearRestaurante(Restaurante restaurante) {
 
         Usuario usuario = usuarioGateway.obtenerUsuarioPorId(restaurante.getIdUsuario())
-                .orElseThrow(() -> new ResourceNotFoundException("El usuario con el ID proporcionado no existe."));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        MensajesEnum.USUARIO_NO_ENCONTRADO_POR_ID.getMensaje() + restaurante.getIdUsuario()));
 
-        if (usuario.getIdRol() != 2) {
-            throw new IllegalArgumentException("El rol debe ser propietario");
+        if (!usuario.getIdRol().equals(RolEnum.PROPIETARIO.getId())) {
+            throw new IllegalArgumentException(MensajesEnum.ROL_PROPIETARIO.getMensaje());
         }
 
         return restauranteRepository.crearRestaurante(restaurante);

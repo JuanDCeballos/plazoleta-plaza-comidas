@@ -13,6 +13,7 @@ import co.juan.plazacomidas.model.restauranteempleado.gateways.RestauranteEmplea
 import co.juan.plazacomidas.model.usuario.Usuario;
 import co.juan.plazacomidas.model.usuario.gateways.UsuarioGateway;
 import co.juan.plazacomidas.model.utils.EstadoPedido;
+import co.juan.plazacomidas.model.utils.MensajesEnum;
 import lombok.RequiredArgsConstructor;
 
 import java.time.LocalDate;
@@ -28,23 +29,25 @@ public class PedidoUseCase {
     private final UsuarioGateway usuarioGateway;
 
     public Pedido crearPedido(String emailCliente, Pedido pedido) {
-        Usuario cliente = usuarioGateway.obtenerUsuarioPorCorreo(emailCliente)
-                .orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado con el email: " + emailCliente));
+        Usuario cliente = obtenerUsuarioPorCorreo(emailCliente);
         pedido.setIdCliente(cliente.getIdUsuario());
 
         if (pedidoRepository.clienteTienePedidoActivo(pedido.getIdCliente())) {
-            throw new IllegalArgumentException("No puede crear un nuevo pedido mientras tenga uno en proceso.");
+            throw new IllegalArgumentException(MensajesEnum.PEDIDO_EN_PROCESO.getMensaje());
         }
 
         if (!restauranteRepository.existePorId(pedido.getIdRestaurante())) {
-            throw new ResourceNotFoundException("Restaurante no encontrado.");
+            throw new ResourceNotFoundException(
+                    MensajesEnum.RESTAURANTE_NO_ENCONTRADO.getMensaje() + pedido.getIdRestaurante());
         }
 
         for (PedidoPlato pp : pedido.getPlatos()) {
             Plato plato = platoRepository.buscarPorId(pp.getIdPlato())
-                    .orElseThrow(() -> new ResourceNotFoundException("Plato no encontrado con id: " + pp.getIdPlato()));
+                    .orElseThrow(() -> new ResourceNotFoundException(MensajesEnum.PLATO_NO_ENCONTRADO.getMensaje() +
+                            pp.getIdPlato()));
             if (!plato.getIdRestaurante().equals(pedido.getIdRestaurante())) {
-                throw new IllegalArgumentException("El plato " + plato.getNombre() + " no pertenece a este restaurante.");
+                throw new IllegalArgumentException(MensajesEnum.PLATO.getMensaje() + plato.getNombre() +
+                        MensajesEnum.NO_PERTECENE_A_RESTAURANTE.getMensaje());
             }
         }
 
@@ -56,13 +59,18 @@ public class PedidoUseCase {
 
     public Pagina<Pedido> listarPedidosPorEstado(
             String emailEmpleado, Optional<EstadoPedido> estado, int page, int size) {
-        Usuario empleado = usuarioGateway.obtenerUsuarioPorCorreo(emailEmpleado)
-                .orElseThrow(() -> new ResourceNotFoundException("Empleado no encontrado con el email: " + emailEmpleado));
+        Usuario empleado = obtenerUsuarioPorCorreo(emailEmpleado);
 
         RestauranteEmpleado restauranteEmpleado = restauranteEmpleadoRepository.buscarByIdUsuarioEmpleado(empleado.getIdUsuario())
-                .orElseThrow(() -> new IllegalArgumentException("No estás asignado a ningún restaurante."));
+                .orElseThrow(() -> new IllegalArgumentException(MensajesEnum.NO_TIENE_RESTAURANTE_ASIGNADO.getMensaje()));
 
         return pedidoRepository.listarPedidosPorRestauranteYEstado(
                 restauranteEmpleado.getIdRestaurante(), estado, page, size);
+    }
+
+    private Usuario obtenerUsuarioPorCorreo(String correo) {
+        return usuarioGateway.obtenerUsuarioPorCorreo(correo)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        MensajesEnum.USUARIO_NO_ENCONTRADO_POR_EMAIL.getMensaje() + correo));
     }
 }

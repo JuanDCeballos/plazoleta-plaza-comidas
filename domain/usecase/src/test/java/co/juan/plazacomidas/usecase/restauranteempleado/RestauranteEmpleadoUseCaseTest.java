@@ -102,6 +102,22 @@ class RestauranteEmpleadoUseCaseTest {
     }
 
     @Test
+    void crearRestauranteEmpleado_retornaException_cuandoNoExisteUsuario() {
+        when(usuarioGateway.obtenerUsuarioPorCorreo(anyString())).thenReturn(Optional.empty());
+
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () -> {
+            restauranteEmpleadoUseCase.crearRestauranteEmpleado(
+                    emailPropietarioLogueado, idRestaurante, restauranteEmpleado);
+        });
+        assertEquals("Usuario no encontrado con el email: " + emailPropietarioLogueado, exception.getMessage());
+
+        verify(usuarioGateway, times(1)).obtenerUsuarioPorCorreo(anyString());
+        verify(restauranteRepository, times(0)).obtenerById(anyLong());
+        verify(usuarioGateway, times(0)).obtenerUsuarioPorId(anyLong());
+        verify(restauranteEmpleadoRepository, times(0)).guardar(any(RestauranteEmpleado.class));
+    }
+
+    @Test
     void crearRestauranteEmpleado_retornaException_cuandoNoExisteRestaurante() {
         when(usuarioGateway.obtenerUsuarioPorCorreo(anyString())).thenReturn(Optional.of(propietarioLogueado));
         when(restauranteRepository.obtenerById(anyLong())).thenReturn(null);
@@ -110,7 +126,8 @@ class RestauranteEmpleadoUseCaseTest {
             restauranteEmpleadoUseCase.crearRestauranteEmpleado(
                     emailPropietarioLogueado, idRestaurante, restauranteEmpleado);
         });
-        assertEquals("Restaurante no encontrado con id: " + idRestaurante, exception.getMessage());
+        assertEquals("Restaurante no encontrado con el id: " +
+                idRestaurante, exception.getMessage());
 
         verify(usuarioGateway, times(1)).obtenerUsuarioPorCorreo(anyString());
         verify(restauranteRepository, times(1)).obtenerById(anyLong());
@@ -138,6 +155,25 @@ class RestauranteEmpleadoUseCaseTest {
     }
 
     @Test
+    void crearRestauranteEmpleado_retornaException_usuairioNoExistePorId() {
+        when(usuarioGateway.obtenerUsuarioPorCorreo(anyString())).thenReturn(Optional.of(propietarioLogueado));
+        when(restauranteRepository.obtenerById(anyLong())).thenReturn(restaurante);
+        when(usuarioGateway.obtenerUsuarioPorId(anyLong())).thenReturn(Optional.empty());
+
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () -> {
+            restauranteEmpleadoUseCase.crearRestauranteEmpleado(
+                    emailPropietarioLogueado, idRestaurante, restauranteEmpleado);
+        });
+        assertEquals("Usuario no encontrado con el id: " +
+                restauranteEmpleado.getIdUsuarioEmpleado(), exception.getMessage());
+
+        verify(usuarioGateway, times(1)).obtenerUsuarioPorCorreo(anyString());
+        verify(restauranteRepository, times(1)).obtenerById(anyLong());
+        verify(usuarioGateway, times(1)).obtenerUsuarioPorId(anyLong());
+        verify(restauranteEmpleadoRepository, times(0)).guardar(any(RestauranteEmpleado.class));
+    }
+
+    @Test
     void crearRestauranteEmpleado_retornaException_usuairioNoEmpleado() {
         empleado.setIdRol(1L);
 
@@ -149,7 +185,7 @@ class RestauranteEmpleadoUseCaseTest {
             restauranteEmpleadoUseCase.crearRestauranteEmpleado(
                     emailPropietarioLogueado, idRestaurante, restauranteEmpleado);
         });
-        assertEquals("El usuario proporcionado no tiene el rol de empleado.", exception.getMessage());
+        assertEquals("El rol debe ser empleado", exception.getMessage());
 
         verify(usuarioGateway, times(1)).obtenerUsuarioPorCorreo(anyString());
         verify(restauranteRepository, times(1)).obtenerById(anyLong());

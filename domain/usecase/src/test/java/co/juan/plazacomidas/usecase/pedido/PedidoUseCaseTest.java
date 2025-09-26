@@ -59,8 +59,6 @@ class PedidoUseCaseTest {
     private Pagina<Pedido> pedidosPaginadosYFiltrados;
 
     private final String emailCliente = "juan.ceballos@correo.com.co";
-    private int page = 0;
-    private int size = 5;
 
     @BeforeEach
     void initMocks() {
@@ -133,6 +131,22 @@ class PedidoUseCaseTest {
     }
 
     @Test
+    void crearPedido_retornaException_cuandoNoExisteUsuarioPorCorreo() {
+        when(usuarioGateway.obtenerUsuarioPorCorreo(anyString())).thenReturn(Optional.empty());
+
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () ->
+                pedidoUseCase.crearPedido(emailCliente, pedido)
+        );
+        assertEquals("Usuario no encontrado con el email: " + emailCliente, exception.getMessage());
+
+        verify(usuarioGateway, times(1)).obtenerUsuarioPorCorreo(anyString());
+        verify(pedidoRepository, times(0)).clienteTienePedidoActivo(anyLong());
+        verify(restauranteRepository, times(0)).existePorId(anyLong());
+        verify(platoRepository, times(0)).buscarPorId(anyLong());
+        verify(pedidoRepository, times(0)).guardarPedido(any(Pedido.class));
+    }
+
+    @Test
     void crearPedido_retornaException_clienteTienePedidoActivo() {
         when(usuarioGateway.obtenerUsuarioPorCorreo(anyString())).thenReturn(Optional.of(usuario));
         when(pedidoRepository.clienteTienePedidoActivo(anyLong())).thenReturn(true);
@@ -158,12 +172,31 @@ class PedidoUseCaseTest {
         ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () ->
                 pedidoUseCase.crearPedido(emailCliente, pedido)
         );
-        assertEquals("Restaurante no encontrado.", exception.getMessage());
+        assertEquals("Restaurante no encontrado con el id: " + pedido.getIdRestaurante(), exception.getMessage());
 
         verify(usuarioGateway, times(1)).obtenerUsuarioPorCorreo(anyString());
         verify(pedidoRepository, times(1)).clienteTienePedidoActivo(anyLong());
         verify(restauranteRepository, times(1)).existePorId(anyLong());
         verify(platoRepository, times(0)).buscarPorId(anyLong());
+        verify(pedidoRepository, times(0)).guardarPedido(any(Pedido.class));
+    }
+
+    @Test
+    void crearPedido_retornaException_cuandoPlatoNoExistePlato() {
+        when(usuarioGateway.obtenerUsuarioPorCorreo(anyString())).thenReturn(Optional.of(usuario));
+        when(pedidoRepository.clienteTienePedidoActivo(anyLong())).thenReturn(false);
+        when(restauranteRepository.existePorId(anyLong())).thenReturn(true);
+        when(platoRepository.buscarPorId(anyLong())).thenReturn(Optional.empty());
+
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () ->
+                pedidoUseCase.crearPedido(emailCliente, pedido)
+        );
+        assertEquals("Plato no encontrado con el id: " + plato.getIdPlato(), exception.getMessage());
+
+        verify(usuarioGateway, times(1)).obtenerUsuarioPorCorreo(anyString());
+        verify(pedidoRepository, times(1)).clienteTienePedidoActivo(anyLong());
+        verify(restauranteRepository, times(1)).existePorId(anyLong());
+        verify(platoRepository, times(1)).buscarPorId(anyLong());
         verify(pedidoRepository, times(0)).guardarPedido(any(Pedido.class));
     }
 
@@ -190,6 +223,9 @@ class PedidoUseCaseTest {
 
     @Test
     void listarPedidosPorEstado() {
+        int size = 5;
+        int page = 0;
+
         when(usuarioGateway.obtenerUsuarioPorCorreo(anyString())).thenReturn(Optional.of(usuario));
         when(restauranteEmpleadoRepository.buscarByIdUsuarioEmpleado(anyLong()))
                 .thenReturn(Optional.of(restauranteEmpleado));

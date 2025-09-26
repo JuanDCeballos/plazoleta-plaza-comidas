@@ -7,6 +7,8 @@ import co.juan.plazacomidas.model.restauranteempleado.RestauranteEmpleado;
 import co.juan.plazacomidas.model.restauranteempleado.gateways.RestauranteEmpleadoRepository;
 import co.juan.plazacomidas.model.usuario.Usuario;
 import co.juan.plazacomidas.model.usuario.gateways.UsuarioGateway;
+import co.juan.plazacomidas.model.utils.MensajesEnum;
+import co.juan.plazacomidas.model.utils.RolEnum;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
@@ -19,23 +21,27 @@ public class RestauranteEmpleadoUseCase {
     public RestauranteEmpleado crearRestauranteEmpleado(String emailPropietarioLogueado,
                                                         Long idRestaurante, RestauranteEmpleado restauranteEmpleado) {
         Usuario propietarioLogueado = usuarioGateway.obtenerUsuarioPorCorreo(emailPropietarioLogueado)
-                .orElseThrow(() -> new ResourceNotFoundException("Propietario no encontrado con email: " + emailPropietarioLogueado));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        MensajesEnum.USUARIO_NO_ENCONTRADO_POR_EMAIL.getMensaje() + emailPropietarioLogueado));
 
         Restaurante restaurante = restauranteRepository.obtenerById(idRestaurante);
 
         if (restaurante == null) {
-            throw new ResourceNotFoundException("Restaurante no encontrado con id: " + idRestaurante);
+            throw new ResourceNotFoundException(
+                    MensajesEnum.RESTAURANTE_NO_ENCONTRADO.getMensaje() + idRestaurante);
         }
 
         if (!restaurante.getIdUsuario().equals(propietarioLogueado.getIdUsuario())) {
-            throw new IllegalArgumentException("No tienes permiso para asignar empleados a este restaurante.");
+            throw new IllegalArgumentException(MensajesEnum.NO_TIENE_PERMISOS_PARA_ASIGNAR_EMPLEADO.getMensaje());
         }
 
         Usuario empleado = usuarioGateway.obtenerUsuarioPorId(restauranteEmpleado.getIdUsuarioEmpleado())
-                .orElseThrow(() -> new ResourceNotFoundException("El usuario que intentas asignar como empleado no existe."));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        MensajesEnum.USUARIO_NO_ENCONTRADO_POR_ID.getMensaje() +
+                                restauranteEmpleado.getIdUsuarioEmpleado()));
 
-        if (!empleado.getIdRol().equals(3L)) {
-            throw new IllegalArgumentException("El usuario proporcionado no tiene el rol de empleado.");
+        if (!empleado.getIdRol().equals(RolEnum.EMPLEADO.getId())) {
+            throw new IllegalArgumentException(MensajesEnum.ROL_EMPLEADO.getMensaje());
         }
 
         restauranteEmpleado.setIdRestaurante(idRestaurante);
