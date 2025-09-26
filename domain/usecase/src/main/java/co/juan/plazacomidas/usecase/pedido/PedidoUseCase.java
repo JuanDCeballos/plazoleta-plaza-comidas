@@ -68,6 +68,29 @@ public class PedidoUseCase {
                 restauranteEmpleado.getIdRestaurante(), estado, page, size);
     }
 
+    public Pedido asignarPedidoYCambiarEstado(String emailEmpleado, Long idPedido) {
+        Usuario empleado = obtenerUsuarioPorCorreo(emailEmpleado);
+
+        RestauranteEmpleado restauranteEmpleado = restauranteEmpleadoRepository.
+                buscarByIdUsuarioEmpleado(empleado.getIdUsuario())
+                .orElseThrow(() -> new IllegalArgumentException(MensajesEnum.NO_TIENE_RESTAURANTE_ASIGNADO.getMensaje()));
+
+        Long idRestauranteDelEmpleado = restauranteEmpleado.getIdRestaurante();
+
+        Pedido pedidoAActualizar = pedidoRepository.buscarPorId(idPedido)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        MensajesEnum.PEDIDO_NO_ENCONTRADO_POR_ID.getMensaje() + idPedido));
+
+        if (!pedidoAActualizar.getIdRestaurante().equals(idRestauranteDelEmpleado)) {
+            throw new IllegalArgumentException(MensajesEnum.NO_TIENE_PERMISOS_PARA_ACTUALIZAR_PEDIDO.getMensaje());
+        }
+
+        pedidoAActualizar.setIdChef(empleado.getIdUsuario());
+        pedidoAActualizar.setEstado(EstadoPedido.EN_PREPARACION);
+
+        return pedidoRepository.actualizarPedido(pedidoAActualizar);
+    }
+
     private Usuario obtenerUsuarioPorCorreo(String correo) {
         return usuarioGateway.obtenerUsuarioPorCorreo(correo)
                 .orElseThrow(() -> new ResourceNotFoundException(

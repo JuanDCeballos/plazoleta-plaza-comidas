@@ -77,4 +77,19 @@ public class PedidoController {
 
         return ResponseEntity.ok(new ApiResponse<>(paginaRespuesta));
     }
+
+    @PatchMapping("/{idPedido}/asignar")
+    @PreAuthorize("hasAuthority('EMPLEADO')")
+    public ResponseEntity<ApiResponse<PedidoResponseDto>> asignarPedido(
+            @PathVariable("idPedido") Long idPedido, @AuthenticationPrincipal UserDetails userDetails) {
+        String emailEmpleado = userDetails.getUsername();
+
+        Pedido pedidoActualizado = pedidoUseCase.asignarPedidoYCambiarEstado(emailEmpleado, idPedido);
+
+        PedidoResponseDto responseDto = pedidoMapper.toPedidoResponseDto(pedidoActualizado);
+
+        ApiResponse<PedidoResponseDto> apiResponse = new ApiResponse<>(responseDto);
+
+        return ResponseEntity.status(HttpStatus.OK).body(apiResponse);
+    }
 }
