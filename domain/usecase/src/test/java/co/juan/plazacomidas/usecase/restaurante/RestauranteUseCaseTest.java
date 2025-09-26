@@ -85,9 +85,8 @@ class RestauranteUseCaseTest {
     void crearRestaurante_retornaException_usuarioNull() {
         when(usuarioGateway.obtenerUsuarioPorId(anyLong())).thenReturn(Optional.empty());
 
-        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () -> {
-            restauranteUseCase.crearRestaurante(restaurante);
-        });
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () ->
+                restauranteUseCase.crearRestaurante(restaurante));
         assertEquals("Usuario no encontrado con el id: " + restaurante.getIdUsuario(), exception.getMessage());
 
         verify(usuarioGateway, times(1)).obtenerUsuarioPorId(anyLong());
@@ -100,9 +99,8 @@ class RestauranteUseCaseTest {
 
         when(usuarioGateway.obtenerUsuarioPorId(anyLong())).thenReturn(Optional.of(usuario));
 
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            restauranteUseCase.crearRestaurante(restaurante);
-        });
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+                restauranteUseCase.crearRestaurante(restaurante));
         assertEquals("El rol debe ser propietario", exception.getMessage());
 
         verify(usuarioGateway, times(1)).obtenerUsuarioPorId(anyLong());
