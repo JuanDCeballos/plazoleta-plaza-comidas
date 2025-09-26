@@ -1,6 +1,7 @@
 package co.juan.plazacomidas.usecase.restaurante;
 
 import co.juan.plazacomidas.model.exceptions.ResourceNotFoundException;
+import co.juan.plazacomidas.model.pagina.Pagina;
 import co.juan.plazacomidas.model.restaurante.Restaurante;
 import co.juan.plazacomidas.model.restaurante.gateways.RestauranteRepository;
 import co.juan.plazacomidas.model.usuario.Usuario;
@@ -13,6 +14,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -33,6 +36,7 @@ class RestauranteUseCaseTest {
 
     private Restaurante restaurante;
     private Usuario usuario;
+    private Pagina<Restaurante> restaurantePagina;
 
     @BeforeEach
     void initMocks() {
@@ -54,11 +58,18 @@ class RestauranteUseCaseTest {
         usuario.setFechaNacimiento(LocalDate.of(2002, 9, 12));
         usuario.setCorreo("juan.ceballos@correo.com.co");
         usuario.setIdRol(2L);
+
+        restaurantePagina = new Pagina<>();
+        restaurantePagina.setContenido(List.of(restaurante));
+        restaurantePagina.setTotalElementos(3L);
+        restaurantePagina.setTotalPaginas(2);
+        restaurantePagina.setNumeroPagina(0);
+        restaurantePagina.setTamanoPagina(5);
     }
 
     @Test
     void crearRestaurante() {
-        when(usuarioGateway.obtenerUsuarioPorId(anyLong())).thenReturn(usuario);
+        when(usuarioGateway.obtenerUsuarioPorId(anyLong())).thenReturn(Optional.of(usuario));
         when(restauranteRepository.crearRestaurante(any(Restaurante.class))).thenReturn(restaurante);
 
         Restaurante restauranteCreado = restauranteUseCase.crearRestaurante(restaurante);
@@ -72,12 +83,11 @@ class RestauranteUseCaseTest {
 
     @Test
     void crearRestaurante_retornaException_usuarioNull() {
-        when(usuarioGateway.obtenerUsuarioPorId(anyLong())).thenReturn(null);
+        when(usuarioGateway.obtenerUsuarioPorId(anyLong())).thenReturn(Optional.empty());
 
-        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () -> {
-            restauranteUseCase.crearRestaurante(restaurante);
-        });
-        assertEquals("El usuario con el ID proporcionado no existe.", exception.getMessage());
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () ->
+                restauranteUseCase.crearRestaurante(restaurante));
+        assertEquals("Usuario no encontrado con el id: " + restaurante.getIdUsuario(), exception.getMessage());
 
         verify(usuarioGateway, times(1)).obtenerUsuarioPorId(anyLong());
         verify(restauranteRepository, times(0)).crearRestaurante(any(Restaurante.class));
@@ -87,14 +97,29 @@ class RestauranteUseCaseTest {
     void crearRestaurante_retornaException_usuarioDiferenteAPropietario() {
         usuario.setIdRol(1L);
 
-        when(usuarioGateway.obtenerUsuarioPorId(anyLong())).thenReturn(usuario);
+        when(usuarioGateway.obtenerUsuarioPorId(anyLong())).thenReturn(Optional.of(usuario));
 
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            restauranteUseCase.crearRestaurante(restaurante);
-        });
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+                restauranteUseCase.crearRestaurante(restaurante));
         assertEquals("El rol debe ser propietario", exception.getMessage());
 
         verify(usuarioGateway, times(1)).obtenerUsuarioPorId(anyLong());
         verify(restauranteRepository, times(0)).crearRestaurante(any(Restaurante.class));
+    }
+
+    @Test
+    void listarRestaurantes() {
+        int page = 0;
+        int size = 5;
+
+        when(restauranteRepository.listarRestaurantesPaginados(anyInt(), anyInt())).thenReturn(restaurantePagina);
+
+        Pagina<Restaurante> restaurantePaginados = restauranteUseCase.listarRestaurantes(page, size);
+        assertNotNull(restaurantePaginados);
+        assertEquals("Burger", restaurantePaginados.getContenido().getFirst().getNombre());
+        assertEquals(3L, restaurantePaginados.getTotalElementos());
+        assertEquals(2, restaurantePaginados.getTotalPaginas());
+
+        verify(restauranteRepository, times(1)).listarRestaurantesPaginados(anyInt(), anyInt());
     }
 }

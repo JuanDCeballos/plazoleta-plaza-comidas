@@ -6,11 +6,17 @@ import co.juan.plazacomidas.jpa.entities.RestauranteEntity;
 import co.juan.plazacomidas.jpa.helper.AdapterOperations;
 import co.juan.plazacomidas.jpa.utils.PlatoEntityMapper;
 import co.juan.plazacomidas.model.exceptions.ResourceNotFoundException;
+import co.juan.plazacomidas.model.pagina.Pagina;
 import co.juan.plazacomidas.model.plato.Plato;
 import co.juan.plazacomidas.model.plato.gateways.PlatoRepository;
 import org.reactivecommons.utils.ObjectMapper;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -51,5 +57,28 @@ public class JpaPlatoRepositoryAdapter extends AdapterOperations<Plato, PlatoEnt
     public Optional<Plato> buscarPorId(Long idPlato) {
         return repository.findById(idPlato)
                 .map(platoEntityMapper::toDomain);
+    }
+
+    @Override
+    public Pagina<Plato> listarPlatosPorRestaurante(Long idRestaurante, Optional<Long> idCategoria, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("nombre").ascending());
+
+        Page<PlatoEntity> pageCustom = repository.findByRestauranteAndCategoriaOptional(
+                idRestaurante,
+                idCategoria.orElse(null),
+                pageable
+        );
+
+        List<Plato> contenidoADominio = pageCustom.getContent().stream()
+                .map(platoEntityMapper::toDomain)
+                .toList();
+
+        return Pagina.<Plato>builder()
+                .contenido(contenidoADominio)
+                .totalElementos(pageCustom.getTotalElements())
+                .totalPaginas(pageCustom.getTotalPages())
+                .numeroPagina(pageCustom.getNumber())
+                .tamanoPagina(pageCustom.getSize())
+                .build();
     }
 }
