@@ -105,10 +105,9 @@ class RestauranteEmpleadoUseCaseTest {
     void crearRestauranteEmpleado_retornaException_cuandoNoExisteUsuario() {
         when(usuarioGateway.obtenerUsuarioPorCorreo(anyString())).thenReturn(Optional.empty());
 
-        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () -> {
-            restauranteEmpleadoUseCase.crearRestauranteEmpleado(
-                    emailPropietarioLogueado, idRestaurante, restauranteEmpleado);
-        });
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () ->
+                restauranteEmpleadoUseCase.crearRestauranteEmpleado(
+                        emailPropietarioLogueado, idRestaurante, restauranteEmpleado));
         assertEquals("Usuario no encontrado con el email: " + emailPropietarioLogueado, exception.getMessage());
 
         verify(usuarioGateway, times(1)).obtenerUsuarioPorCorreo(anyString());
@@ -122,10 +121,9 @@ class RestauranteEmpleadoUseCaseTest {
         when(usuarioGateway.obtenerUsuarioPorCorreo(anyString())).thenReturn(Optional.of(propietarioLogueado));
         when(restauranteRepository.obtenerById(anyLong())).thenReturn(null);
 
-        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () -> {
-            restauranteEmpleadoUseCase.crearRestauranteEmpleado(
-                    emailPropietarioLogueado, idRestaurante, restauranteEmpleado);
-        });
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () ->
+                restauranteEmpleadoUseCase.crearRestauranteEmpleado(
+                        emailPropietarioLogueado, idRestaurante, restauranteEmpleado));
         assertEquals("Restaurante no encontrado con el id: " +
                 idRestaurante, exception.getMessage());
 
@@ -142,10 +140,9 @@ class RestauranteEmpleadoUseCaseTest {
         when(usuarioGateway.obtenerUsuarioPorCorreo(anyString())).thenReturn(Optional.of(propietarioLogueado));
         when(restauranteRepository.obtenerById(anyLong())).thenReturn(restaurante);
 
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            restauranteEmpleadoUseCase.crearRestauranteEmpleado(
-                    emailPropietarioLogueado, idRestaurante, restauranteEmpleado);
-        });
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+                restauranteEmpleadoUseCase.crearRestauranteEmpleado(
+                        emailPropietarioLogueado, idRestaurante, restauranteEmpleado));
         assertEquals("No tienes permiso para asignar empleados a este restaurante.", exception.getMessage());
 
         verify(usuarioGateway, times(1)).obtenerUsuarioPorCorreo(anyString());
@@ -160,10 +157,9 @@ class RestauranteEmpleadoUseCaseTest {
         when(restauranteRepository.obtenerById(anyLong())).thenReturn(restaurante);
         when(usuarioGateway.obtenerUsuarioPorId(anyLong())).thenReturn(Optional.empty());
 
-        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () -> {
-            restauranteEmpleadoUseCase.crearRestauranteEmpleado(
-                    emailPropietarioLogueado, idRestaurante, restauranteEmpleado);
-        });
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () ->
+                restauranteEmpleadoUseCase.crearRestauranteEmpleado(
+                        emailPropietarioLogueado, idRestaurante, restauranteEmpleado));
         assertEquals("Usuario no encontrado con el id: " +
                 restauranteEmpleado.getIdUsuarioEmpleado(), exception.getMessage());
 
@@ -181,10 +177,9 @@ class RestauranteEmpleadoUseCaseTest {
         when(restauranteRepository.obtenerById(anyLong())).thenReturn(restaurante);
         when(usuarioGateway.obtenerUsuarioPorId(anyLong())).thenReturn(Optional.of(empleado));
 
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            restauranteEmpleadoUseCase.crearRestauranteEmpleado(
-                    emailPropietarioLogueado, idRestaurante, restauranteEmpleado);
-        });
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+                restauranteEmpleadoUseCase.crearRestauranteEmpleado(
+                        emailPropietarioLogueado, idRestaurante, restauranteEmpleado));
         assertEquals("El rol debe ser empleado", exception.getMessage());
 
         verify(usuarioGateway, times(1)).obtenerUsuarioPorCorreo(anyString());

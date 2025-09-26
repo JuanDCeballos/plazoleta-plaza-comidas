@@ -92,9 +92,8 @@ class PlatoUseCaseTest {
     void crearPlato_retornaException_cuandoNoExisteRestaurante() {
         when(restauranteRepository.existePorId(anyLong())).thenReturn(false);
 
-        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () -> {
-            platoUseCase.crearPlato(idRestaurante, plato);
-        });
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () ->
+                platoUseCase.crearPlato(idRestaurante, plato));
         assertEquals("Restaurante no encontrado con el id: " + idRestaurante, exception.getMessage());
 
         verify(restauranteRepository, times(1)).existePorId(anyLong());
@@ -107,9 +106,8 @@ class PlatoUseCaseTest {
         when(restauranteRepository.existePorId(anyLong())).thenReturn(true);
         when(categoriaRepository.existePorId(anyLong())).thenReturn(false);
 
-        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () -> {
-            platoUseCase.crearPlato(idRestaurante, plato);
-        });
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () ->
+                platoUseCase.crearPlato(idRestaurante, plato));
         assertEquals("Categoria no encontrada con el id: " + plato.getCategoria(), exception.getMessage());
 
         verify(restauranteRepository, times(1)).existePorId(anyLong());
@@ -152,9 +150,8 @@ class PlatoUseCaseTest {
     void actualizarPlato_retornaException_cuandoNoExisteRestaurante() {
         when(restauranteRepository.existePorId(anyLong())).thenReturn(false);
 
-        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () -> {
-            platoUseCase.actualizarPlato(idRestaurante, idPlato, platoConNuevosDatos);
-        });
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () ->
+                platoUseCase.actualizarPlato(idRestaurante, idPlato, platoConNuevosDatos));
         assertEquals("Restaurante no encontrado con el id: " + idRestaurante, exception.getMessage());
 
         verify(restauranteRepository, times(1)).existePorId(anyLong());
@@ -169,9 +166,8 @@ class PlatoUseCaseTest {
         when(restauranteRepository.existePorId(anyLong())).thenReturn(true);
         when(platoRepository.buscarPorId(anyLong())).thenReturn(Optional.of(plato));
 
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            platoUseCase.actualizarPlato(idRestaurante, idPlato, platoConNuevosDatos);
-        });
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+                platoUseCase.actualizarPlato(idRestaurante, idPlato, platoConNuevosDatos));
         assertEquals("El plato " + plato.getNombre() + " no pertenece a este restaurante.", exception.getMessage());
 
         verify(restauranteRepository, times(1)).existePorId(anyLong());
@@ -219,9 +215,8 @@ class PlatoUseCaseTest {
     void actualizarEstadoPlato_retornaException_cuandoNoExisteRestaurante() {
         when(restauranteRepository.existePorId(anyLong())).thenReturn(false);
 
-        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () -> {
-            platoUseCase.actualizarEstadoPlato(idRestaurante, idPlato, estado);
-        });
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () ->
+                platoUseCase.actualizarEstadoPlato(idRestaurante, idPlato, estado));
         assertEquals("Restaurante no encontrado con el id: " + idRestaurante, exception.getMessage());
 
         verify(restauranteRepository, times(1)).existePorId(anyLong());
@@ -236,9 +231,8 @@ class PlatoUseCaseTest {
         when(restauranteRepository.existePorId(anyLong())).thenReturn(true);
         when(platoRepository.buscarPorId(anyLong())).thenReturn(Optional.of(plato));
 
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            platoUseCase.actualizarEstadoPlato(idRestaurante, idPlato, estado);
-        });
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+                platoUseCase.actualizarEstadoPlato(idRestaurante, idPlato, estado));
         assertEquals("El plato " + plato.getNombre() + " no pertenece a este restaurante.", exception.getMessage());
 
         verify(restauranteRepository, times(1)).existePorId(anyLong());

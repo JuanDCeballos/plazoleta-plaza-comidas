@@ -38,9 +38,6 @@ class RestauranteUseCaseTest {
     private Usuario usuario;
     private Pagina<Restaurante> restaurantePagina;
 
-    private int page = 0;
-    private int size = 5;
-
     @BeforeEach
     void initMocks() {
         restaurante = new Restaurante();
@@ -114,6 +111,9 @@ class RestauranteUseCaseTest {
 
     @Test
     void listarRestaurantes() {
+        int page = 0;
+        int size = 5;
+
         when(restauranteRepository.listarRestaurantesPaginados(anyInt(), anyInt())).thenReturn(restaurantePagina);
 
         Pagina<Restaurante> restaurantePaginados = restauranteUseCase.listarRestaurantes(page, size);
