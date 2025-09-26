@@ -12,7 +12,10 @@ public enum MensajesEnum {
     CATEGORIA_NO_ENCONTRADA_POR_ID("Categoria no encontrada con el id: "),
     ROL_PROPIETARIO("El rol debe ser propietario"),
     NO_TIENE_PERMISOS_PARA_ASIGNAR_EMPLEADO("No tienes permiso para asignar empleados a este restaurante."),
-    ROL_EMPLEADO("El rol debe ser empleado");
+    ROL_EMPLEADO("El rol debe ser empleado"),
+    PEDIDO_NO_ENCONTRADO_POR_ID("Pedido no encontrado con id: "),
+    NO_TIENE_PERMISOS_PARA_ACTUALIZAR_PEDIDO("No tienes permiso para modificar este pedido."),
+    ;
 
     private String mensaje;
 

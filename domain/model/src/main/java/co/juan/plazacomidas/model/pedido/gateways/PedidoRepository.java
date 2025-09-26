@@ -8,7 +8,11 @@ import java.util.Optional;
 
 public interface PedidoRepository {
 
+    Optional<Pedido> buscarPorId(Long idPedido);
+
     Pedido guardarPedido(Pedido pedido);
+
+    Pedido actualizarPedido(Pedido pedido);
 
     boolean clienteTienePedidoActivo(Long idCliente);
 

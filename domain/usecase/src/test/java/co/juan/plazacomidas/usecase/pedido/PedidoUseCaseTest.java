@@ -13,6 +13,7 @@ import co.juan.plazacomidas.model.restauranteempleado.gateways.RestauranteEmplea
 import co.juan.plazacomidas.model.usuario.Usuario;
 import co.juan.plazacomidas.model.usuario.gateways.UsuarioGateway;
 import co.juan.plazacomidas.model.utils.EstadoPedido;
+import co.juan.plazacomidas.model.utils.MensajesEnum;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -59,6 +60,7 @@ class PedidoUseCaseTest {
     private Pagina<Pedido> pedidosPaginadosYFiltrados;
 
     private final String emailCliente = "juan.ceballos@correo.com.co";
+    private final Long idPedido = 1L;
 
     @BeforeEach
     void initMocks() {
@@ -243,5 +245,62 @@ class PedidoUseCaseTest {
         verify(restauranteEmpleadoRepository, times(1)).buscarByIdUsuarioEmpleado(anyLong());
         verify(pedidoRepository, times(1)).listarPedidosPorRestauranteYEstado(
                 anyLong(), any(), anyInt(), anyInt());
+    }
+
+    @Test
+    void asignarPedidoYCambiarEstado() {
+        when(usuarioGateway.obtenerUsuarioPorCorreo(anyString())).thenReturn(Optional.of(usuario));
+        when(restauranteEmpleadoRepository.buscarByIdUsuarioEmpleado(anyLong()))
+                .thenReturn(Optional.of(restauranteEmpleado));
+        when(pedidoRepository.buscarPorId(anyLong())).thenReturn(Optional.of(pedido));
+        when(pedidoRepository.actualizarPedido(any(Pedido.class))).thenReturn(pedido);
+
+        Pedido pedidoAsignadoYActualizado = pedidoUseCase.asignarPedidoYCambiarEstado(emailCliente, idPedido);
+        assertNotNull(pedidoAsignadoYActualizado);
+        assertEquals(1L, pedidoAsignadoYActualizado.getIdChef());
+        assertEquals(EstadoPedido.EN_PREPARACION, pedidoAsignadoYActualizado.getEstado());
+
+        verify(usuarioGateway, times(1)).obtenerUsuarioPorCorreo(anyString());
+        verify(restauranteEmpleadoRepository, times(1)).buscarByIdUsuarioEmpleado(anyLong());
+        verify(pedidoRepository, times(1)).buscarPorId(anyLong());
+        verify(pedidoRepository, times(1)).actualizarPedido(any(Pedido.class));
+    }
+
+    @Test
+    void asignarPedidoYCambiarEstado_retornaException_cuandoNoExistePedido() {
+        when(usuarioGateway.obtenerUsuarioPorCorreo(anyString())).thenReturn(Optional.of(usuario));
+        when(restauranteEmpleadoRepository.buscarByIdUsuarioEmpleado(anyLong()))
+                .thenReturn(Optional.of(restauranteEmpleado));
+        when(pedidoRepository.buscarPorId(anyLong())).thenReturn(Optional.empty());
+
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () ->
+                pedidoUseCase.asignarPedidoYCambiarEstado(emailCliente, idPedido)
+        );
+        assertEquals(MensajesEnum.PEDIDO_NO_ENCONTRADO_POR_ID.getMensaje() + idPedido, exception.getMessage());
+
+        verify(usuarioGateway, times(1)).obtenerUsuarioPorCorreo(anyString());
+        verify(restauranteEmpleadoRepository, times(1)).buscarByIdUsuarioEmpleado(anyLong());
+        verify(pedidoRepository, times(1)).buscarPorId(anyLong());
+        verify(pedidoRepository, times(0)).actualizarPedido(any(Pedido.class));
+    }
+
+    @Test
+    void asignarPedidoYCambiarEstado_retornaException_cuandoNoCoincidenLosRestaurantes() {
+        pedido.setIdRestaurante(5L);
+
+        when(usuarioGateway.obtenerUsuarioPorCorreo(anyString())).thenReturn(Optional.of(usuario));
+        when(restauranteEmpleadoRepository.buscarByIdUsuarioEmpleado(anyLong()))
+                .thenReturn(Optional.of(restauranteEmpleado));
+        when(pedidoRepository.buscarPorId(anyLong())).thenReturn(Optional.of(pedido));
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+                pedidoUseCase.asignarPedidoYCambiarEstado(emailCliente, idPedido)
+        );
+        assertEquals(MensajesEnum.NO_TIENE_PERMISOS_PARA_ACTUALIZAR_PEDIDO.getMensaje(), exception.getMessage());
+
+        verify(usuarioGateway, times(1)).obtenerUsuarioPorCorreo(anyString());
+        verify(restauranteEmpleadoRepository, times(1)).buscarByIdUsuarioEmpleado(anyLong());
+        verify(pedidoRepository, times(1)).buscarPorId(anyLong());
+        verify(pedidoRepository, times(0)).actualizarPedido(any(Pedido.class));
     }
 }
