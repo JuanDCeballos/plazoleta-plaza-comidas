@@ -1,0 +1,6 @@
+dependencies {
+    implementation project(':model')
+    implementation 'org.springframework:spring-context'
+
+    implementation 'com.twilio.sdk:twilio:9.2.5'
+}
