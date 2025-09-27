@@ -85,6 +85,10 @@ public class PedidoUseCase {
             throw new IllegalArgumentException(MensajesEnum.NO_TIENE_PERMISOS_PARA_ACTUALIZAR_PEDIDO.getMensaje());
         }
 
+        if (!pedidoAActualizar.getEstado().equals(EstadoPedido.PENDIENTE)) {
+            throw new IllegalArgumentException(MensajesEnum.PEDIDO_EN_PREPARACION_O_CANCELADO.getMensaje());
+        }
+
         pedidoAActualizar.setIdChef(empleado.getIdUsuario());
         pedidoAActualizar.setEstado(EstadoPedido.EN_PREPARACION);
 
@@ -98,6 +102,10 @@ public class PedidoUseCase {
         validarPertenenciaChefYEmpleado(pedidoAActualizar.getIdChef(), empleado.getIdUsuario());
 
         String pin = String.format("%04d", new java.util.Random().nextInt(10000));
+
+        if (!pedidoAActualizar.getEstado().equals(EstadoPedido.EN_PREPARACION)) {
+            throw new IllegalArgumentException(MensajesEnum.PEDIDO_ENTREGADO_O_CANCELADO.getMensaje());
+        }
 
         pedidoAActualizar.setEstado(EstadoPedido.LISTO);
         pedidoAActualizar.setPinEntrega(pin);
@@ -118,8 +126,7 @@ public class PedidoUseCase {
 
         validarPertenenciaChefYEmpleado(pedidoAEntregar.getIdChef(), empleado.getIdUsuario());
 
-        if (pedidoAEntregar.getEstado().equals(EstadoPedido.ENTREGADO) ||
-                !pedidoAEntregar.getEstado().equals(EstadoPedido.LISTO)) {
+        if (!pedidoAEntregar.getEstado().equals(EstadoPedido.LISTO)) {
             throw new IllegalArgumentException(MensajesEnum.PEDIDO_ENTREGADO_O_AUN_NO_LISTO.getMensaje());
         }
 
@@ -130,6 +137,24 @@ public class PedidoUseCase {
         pedidoAEntregar.setEstado(EstadoPedido.ENTREGADO);
 
         return pedidoRepository.actualizarPedido(pedidoAEntregar);
+    }
+
+    public Pedido cancelarPedido(String emailCliente, Long idPedido) {
+        Usuario cliente = obtenerUsuarioPorCorreo(emailCliente);
+        Pedido pedidoACancelar = buscarPedidoPorId(idPedido);
+
+        if (!cliente.getIdUsuario().equals(pedidoACancelar.getIdCliente())) {
+            throw new IllegalArgumentException(
+                    MensajesEnum.NO_PUEDE_CANCELAR_UN_PEDIDO_QUE_NO_LE_PERTENECE.getMensaje());
+        }
+
+        if (!pedidoACancelar.getEstado().equals(EstadoPedido.PENDIENTE)) {
+            throw new IllegalArgumentException(MensajesEnum.PEDIDO_EN_PREPARACION_NO_PUEDE_CANCELARSE.getMensaje());
+        }
+
+        pedidoACancelar.setEstado(EstadoPedido.CANCELADO);
+
+        return pedidoRepository.actualizarPedido(pedidoACancelar);
     }
 
     private void validarPertenenciaChefYEmpleado(Long idChef, Long idUsuario) {

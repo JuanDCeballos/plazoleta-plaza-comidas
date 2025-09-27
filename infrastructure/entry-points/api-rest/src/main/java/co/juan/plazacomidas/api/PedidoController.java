@@ -124,4 +124,19 @@ public class PedidoController {
 
         return ResponseEntity.status(HttpStatus.OK).body(apiResponse);
     }
+
+    @PatchMapping("/{idPedido}/cancelar")
+    @PreAuthorize("hasAuthority('CLIENTE')")
+    public ResponseEntity<ApiResponse<PedidoResponseDto>> cancelarPedido(
+            @PathVariable("idPedido") Long idPedido, @AuthenticationPrincipal UserDetails userDetails) {
+        String emailEmpleado = userDetails.getUsername();
+
+        Pedido pedidoCancelado = pedidoUseCase.cancelarPedido(emailEmpleado, idPedido);
+
+        PedidoResponseDto responseDto = pedidoMapper.toPedidoResponseDto(pedidoCancelado);
+
+        ApiResponse<PedidoResponseDto> apiResponse = new ApiResponse<>(responseDto);
+
+        return ResponseEntity.status(HttpStatus.OK).body(apiResponse);
+    }
 }
