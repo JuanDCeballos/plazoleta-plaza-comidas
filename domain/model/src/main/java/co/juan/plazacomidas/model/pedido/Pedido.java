@@ -23,6 +23,7 @@ public class Pedido {
     private LocalDate fecha;
     private EstadoPedido estado;
     private Long idChef;
+    private String pinEntrega;
     private Long idRestaurante;
     private List<PedidoPlato> platos;
 }
