@@ -81,6 +81,7 @@ public class JpaPedidoRepositoryAdapter extends AdapterOperations<Pedido, Pedido
 
         pedidoExistente.setEstado(pedido.getEstado());
         pedidoExistente.setIdChef(pedido.getIdChef());
+        pedidoExistente.setPinEntrega(pedido.getPinEntrega());
 
         PedidoEntity pedidoActualizado = repository.save(pedidoExistente);
 

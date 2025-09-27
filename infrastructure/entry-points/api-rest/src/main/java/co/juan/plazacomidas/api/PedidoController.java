@@ -1,6 +1,7 @@
 package co.juan.plazacomidas.api;
 
 import co.juan.plazacomidas.api.dto.ApiResponse;
+import co.juan.plazacomidas.api.dto.pedido.EntregarPedidoRequestDto;
 import co.juan.plazacomidas.api.dto.pedido.PedidoRequestDto;
 import co.juan.plazacomidas.api.dto.pedido.PedidoResponseDto;
 import co.juan.plazacomidas.api.utils.PedidoMapper;
@@ -100,6 +101,22 @@ public class PedidoController {
         String emailEmpleado = userDetails.getUsername();
 
         Pedido pedidoActualizado = pedidoUseCase.marcarPedidoComoListo(emailEmpleado, idPedido);
+
+        PedidoResponseDto responseDto = pedidoMapper.toPedidoResponseDto(pedidoActualizado);
+
+        ApiResponse<PedidoResponseDto> apiResponse = new ApiResponse<>(responseDto);
+
+        return ResponseEntity.status(HttpStatus.OK).body(apiResponse);
+    }
+
+    @PatchMapping("/{idPedido}/entregar")
+    @PreAuthorize("hasAuthority('EMPLEADO')")
+    public ResponseEntity<ApiResponse<PedidoResponseDto>> entregarPedido(
+            @PathVariable("idPedido") Long idPedido, @Valid @RequestBody EntregarPedidoRequestDto requestDto,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        String emailEmpleado = userDetails.getUsername();
+
+        Pedido pedidoActualizado = pedidoUseCase.entregarPedido(emailEmpleado, idPedido, requestDto.getPinEntrega());
 
         PedidoResponseDto responseDto = pedidoMapper.toPedidoResponseDto(pedidoActualizado);
 
