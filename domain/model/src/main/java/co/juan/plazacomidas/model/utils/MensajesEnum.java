@@ -15,6 +15,8 @@ public enum MensajesEnum {
     ROL_EMPLEADO("El rol debe ser empleado"),
     PEDIDO_NO_ENCONTRADO_POR_ID("Pedido no encontrado con id: "),
     NO_TIENE_PERMISOS_PARA_ACTUALIZAR_PEDIDO("No tienes permiso para modificar este pedido."),
+    NO_PUEDE_MARCAR_COMO_LIST_UN_PEDIDO_AL_CUAL_NO_ESTA_ASIGNADO("No puede marcar un pedido como listo al cual no esta asignado"),
+    PEDIDO_LISTO("¡Tu pedido está listo! Tu PIN para reclamarlo es: "),
     ;
 
     private String mensaje;

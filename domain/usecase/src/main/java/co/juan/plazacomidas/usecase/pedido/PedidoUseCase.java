@@ -1,6 +1,7 @@
 package co.juan.plazacomidas.usecase.pedido;
 
 import co.juan.plazacomidas.model.exceptions.ResourceNotFoundException;
+import co.juan.plazacomidas.model.notificacion.NotificacionGateway;
 import co.juan.plazacomidas.model.pagina.Pagina;
 import co.juan.plazacomidas.model.pedido.Pedido;
 import co.juan.plazacomidas.model.pedido.gateways.PedidoRepository;
@@ -27,6 +28,7 @@ public class PedidoUseCase {
     private final RestauranteRepository restauranteRepository;
     private final PlatoRepository platoRepository;
     private final UsuarioGateway usuarioGateway;
+    private final NotificacionGateway notificacionGateway;
 
     public Pedido crearPedido(String emailCliente, Pedido pedido) {
         Usuario cliente = obtenerUsuarioPorCorreo(emailCliente);
@@ -77,9 +79,7 @@ public class PedidoUseCase {
 
         Long idRestauranteDelEmpleado = restauranteEmpleado.getIdRestaurante();
 
-        Pedido pedidoAActualizar = pedidoRepository.buscarPorId(idPedido)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        MensajesEnum.PEDIDO_NO_ENCONTRADO_POR_ID.getMensaje() + idPedido));
+        Pedido pedidoAActualizar = buscarPedidoPorId(idPedido);
 
         if (!pedidoAActualizar.getIdRestaurante().equals(idRestauranteDelEmpleado)) {
             throw new IllegalArgumentException(MensajesEnum.NO_TIENE_PERMISOS_PARA_ACTUALIZAR_PEDIDO.getMensaje());
@@ -91,9 +91,44 @@ public class PedidoUseCase {
         return pedidoRepository.actualizarPedido(pedidoAActualizar);
     }
 
+    public Pedido marcarPedidoComoListo(String emailEmpleado, Long idPedido) {
+        Usuario empleado = obtenerUsuarioPorCorreo(emailEmpleado);
+        Pedido pedidoAActualizar = buscarPedidoPorId(idPedido);
+
+        if (!pedidoAActualizar.getIdChef().equals(empleado.getIdUsuario())) {
+            throw new IllegalArgumentException(
+                    MensajesEnum.NO_PUEDE_MARCAR_COMO_LIST_UN_PEDIDO_AL_CUAL_NO_ESTA_ASIGNADO.getMensaje());
+        }
+
+        String pin = String.format("%04d", new java.util.Random().nextInt(10000));
+
+        pedidoAActualizar.setEstado(EstadoPedido.LISTO);
+
+        Pedido pedidoGuardado = pedidoRepository.actualizarPedido(pedidoAActualizar);
+
+        Usuario cliente = obtenerUsuarioPorId(pedidoGuardado.getIdCliente());
+
+        String mensaje = MensajesEnum.PEDIDO_LISTO.getMensaje() + pin;
+        notificacionGateway.enviarNotificacion(cliente.getCelular(), mensaje);
+
+        return pedidoGuardado;
+    }
+
     private Usuario obtenerUsuarioPorCorreo(String correo) {
         return usuarioGateway.obtenerUsuarioPorCorreo(correo)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         MensajesEnum.USUARIO_NO_ENCONTRADO_POR_EMAIL.getMensaje() + correo));
+    }
+
+    private Usuario obtenerUsuarioPorId(Long idUsario) {
+        return usuarioGateway.obtenerUsuarioPorId(idUsario)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        MensajesEnum.USUARIO_NO_ENCONTRADO_POR_ID.getMensaje() + idUsario));
+    }
+
+    private Pedido buscarPedidoPorId(Long idPedido) {
+        return pedidoRepository.buscarPorId(idPedido)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        MensajesEnum.PEDIDO_NO_ENCONTRADO_POR_ID.getMensaje() + idPedido));
     }
 }

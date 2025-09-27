@@ -1,6 +1,7 @@
 package co.juan.plazacomidas.usecase.pedido;
 
 import co.juan.plazacomidas.model.exceptions.ResourceNotFoundException;
+import co.juan.plazacomidas.model.notificacion.NotificacionGateway;
 import co.juan.plazacomidas.model.pagina.Pagina;
 import co.juan.plazacomidas.model.pedido.Pedido;
 import co.juan.plazacomidas.model.pedido.gateways.PedidoRepository;
@@ -52,6 +53,9 @@ class PedidoUseCaseTest {
 
     @Mock
     RestauranteEmpleadoRepository restauranteEmpleadoRepository;
+
+    @Mock
+    NotificacionGateway notificacionGateway;
 
     private Pedido pedido;
     private Usuario usuario;
@@ -302,5 +306,65 @@ class PedidoUseCaseTest {
         verify(restauranteEmpleadoRepository, times(1)).buscarByIdUsuarioEmpleado(anyLong());
         verify(pedidoRepository, times(1)).buscarPorId(anyLong());
         verify(pedidoRepository, times(0)).actualizarPedido(any(Pedido.class));
+    }
+
+    @Test
+    void marcarPedidoComoListo() {
+        when(usuarioGateway.obtenerUsuarioPorCorreo(anyString())).thenReturn(Optional.of(usuario));
+        when(pedidoRepository.buscarPorId(anyLong())).thenReturn(Optional.of(pedido));
+        when(pedidoRepository.actualizarPedido(any(Pedido.class))).thenReturn(pedido);
+        when(usuarioGateway.obtenerUsuarioPorId(anyLong())).thenReturn(Optional.of(usuario));
+        doNothing().when(notificacionGateway).enviarNotificacion(anyString(), anyString());
+
+        Pedido pedidoAsignadoYActualizado = pedidoUseCase.marcarPedidoComoListo(emailCliente, idPedido);
+        assertNotNull(pedidoAsignadoYActualizado);
+        assertEquals(1L, pedidoAsignadoYActualizado.getIdChef());
+        assertEquals(EstadoPedido.LISTO, pedidoAsignadoYActualizado.getEstado());
+
+        verify(usuarioGateway, times(1)).obtenerUsuarioPorCorreo(anyString());
+        verify(pedidoRepository, times(1)).buscarPorId(anyLong());
+        verify(pedidoRepository, times(1)).actualizarPedido(any(Pedido.class));
+        verify(usuarioGateway, times(1)).obtenerUsuarioPorId(anyLong());
+        verify(notificacionGateway, times(1)).enviarNotificacion(anyString(), anyString());
+    }
+
+    @Test
+    void marcarPedidoComoListo_retornaException_cuandoEmpleadoNoCoincide() {
+        pedido.setIdChef(5L);
+
+        when(usuarioGateway.obtenerUsuarioPorCorreo(anyString())).thenReturn(Optional.of(usuario));
+        when(pedidoRepository.buscarPorId(anyLong())).thenReturn(Optional.of(pedido));
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+                pedidoUseCase.marcarPedidoComoListo(emailCliente, idPedido)
+        );
+        assertEquals(
+                MensajesEnum.NO_PUEDE_MARCAR_COMO_LIST_UN_PEDIDO_AL_CUAL_NO_ESTA_ASIGNADO.getMensaje(), exception.getMessage());
+
+        verify(usuarioGateway, times(1)).obtenerUsuarioPorCorreo(anyString());
+        verify(pedidoRepository, times(1)).buscarPorId(anyLong());
+        verify(pedidoRepository, times(0)).actualizarPedido(any(Pedido.class));
+        verify(usuarioGateway, times(0)).obtenerUsuarioPorId(anyLong());
+        verify(notificacionGateway, times(0)).enviarNotificacion(anyString(), anyString());
+    }
+
+    @Test
+    void marcarPedidoComoListo_retornaException_cuandoNoExisteUsuarioPorId() {
+        when(usuarioGateway.obtenerUsuarioPorCorreo(anyString())).thenReturn(Optional.of(usuario));
+        when(pedidoRepository.buscarPorId(anyLong())).thenReturn(Optional.of(pedido));
+        when(pedidoRepository.actualizarPedido(any(Pedido.class))).thenReturn(pedido);
+        when(usuarioGateway.obtenerUsuarioPorId(anyLong())).thenReturn(Optional.empty());
+
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () ->
+                pedidoUseCase.marcarPedidoComoListo(emailCliente, idPedido)
+        );
+        assertEquals(
+                MensajesEnum.USUARIO_NO_ENCONTRADO_POR_ID.getMensaje() + pedido.getIdCliente(), exception.getMessage());
+
+        verify(usuarioGateway, times(1)).obtenerUsuarioPorCorreo(anyString());
+        verify(pedidoRepository, times(1)).buscarPorId(anyLong());
+        verify(pedidoRepository, times(1)).actualizarPedido(any(Pedido.class));
+        verify(usuarioGateway, times(1)).obtenerUsuarioPorId(anyLong());
+        verify(notificacionGateway, times(0)).enviarNotificacion(anyString(), anyString());
     }
 }
