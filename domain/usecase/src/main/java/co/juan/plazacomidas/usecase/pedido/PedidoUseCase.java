@@ -95,14 +95,12 @@ public class PedidoUseCase {
         Usuario empleado = obtenerUsuarioPorCorreo(emailEmpleado);
         Pedido pedidoAActualizar = buscarPedidoPorId(idPedido);
 
-        if (!pedidoAActualizar.getIdChef().equals(empleado.getIdUsuario())) {
-            throw new IllegalArgumentException(
-                    MensajesEnum.NO_PUEDE_MARCAR_COMO_LIST_UN_PEDIDO_AL_CUAL_NO_ESTA_ASIGNADO.getMensaje());
-        }
+        validarPertenenciaChefYEmpleado(pedidoAActualizar.getIdChef(), empleado.getIdUsuario());
 
         String pin = String.format("%04d", new java.util.Random().nextInt(10000));
 
         pedidoAActualizar.setEstado(EstadoPedido.LISTO);
+        pedidoAActualizar.setPinEntrega(pin);
 
         Pedido pedidoGuardado = pedidoRepository.actualizarPedido(pedidoAActualizar);
 
@@ -112,6 +110,33 @@ public class PedidoUseCase {
         notificacionGateway.enviarNotificacion(cliente.getCelular(), mensaje);
 
         return pedidoGuardado;
+    }
+
+    public Pedido entregarPedido(String emailEmpleado, Long idPedido, String pinEntregado) {
+        Usuario empleado = obtenerUsuarioPorCorreo(emailEmpleado);
+        Pedido pedidoAEntregar = buscarPedidoPorId(idPedido);
+
+        validarPertenenciaChefYEmpleado(pedidoAEntregar.getIdChef(), empleado.getIdUsuario());
+
+        if (pedidoAEntregar.getEstado().equals(EstadoPedido.ENTREGADO) ||
+                !pedidoAEntregar.getEstado().equals(EstadoPedido.LISTO)) {
+            throw new IllegalArgumentException(MensajesEnum.PEDIDO_ENTREGADO_O_AUN_NO_LISTO.getMensaje());
+        }
+
+        if (!pedidoAEntregar.getPinEntrega().equals(pinEntregado)) {
+            throw new IllegalArgumentException(MensajesEnum.EL_PIN_DE_ENTREGA_ES_INCORRECTO.getMensaje());
+        }
+
+        pedidoAEntregar.setEstado(EstadoPedido.ENTREGADO);
+
+        return pedidoRepository.actualizarPedido(pedidoAEntregar);
+    }
+
+    private void validarPertenenciaChefYEmpleado(Long idChef, Long idUsuario) {
+        if (!idChef.equals(idUsuario)) {
+            throw new IllegalArgumentException(
+                    MensajesEnum.NO_PUEDE_MARCAR_COMO_LIST_UN_PEDIDO_AL_CUAL_NO_ESTA_ASIGNADO.getMensaje());
+        }
     }
 
     private Usuario obtenerUsuarioPorCorreo(String correo) {

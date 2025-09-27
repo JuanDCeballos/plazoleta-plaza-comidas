@@ -17,6 +17,8 @@ public enum MensajesEnum {
     NO_TIENE_PERMISOS_PARA_ACTUALIZAR_PEDIDO("No tienes permiso para modificar este pedido."),
     NO_PUEDE_MARCAR_COMO_LIST_UN_PEDIDO_AL_CUAL_NO_ESTA_ASIGNADO("No puede marcar un pedido como listo al cual no esta asignado"),
     PEDIDO_LISTO("¡Tu pedido está listo! Tu PIN para reclamarlo es: "),
+    PEDIDO_ENTREGADO_O_AUN_NO_LISTO("El pedido ya fue entregado o aún no esta listo"),
+    EL_PIN_DE_ENTREGA_ES_INCORRECTO("El PIN de entrega es incorrecto."),
     ;
 
     private String mensaje;

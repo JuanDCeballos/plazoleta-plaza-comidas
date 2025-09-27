@@ -1,6 +1,7 @@
 package co.juan.plazacomidas.config;
 
 import co.juan.plazacomidas.model.categoria.gateways.CategoriaRepository;
+import co.juan.plazacomidas.model.notificacion.NotificacionGateway;
 import co.juan.plazacomidas.model.pedido.gateways.PedidoRepository;
 import co.juan.plazacomidas.model.plato.gateways.PlatoRepository;
 import co.juan.plazacomidas.model.restaurante.gateways.RestauranteRepository;
@@ -71,6 +72,11 @@ public class UseCasesConfigTest {
         @Bean
         public PedidoRepository pedidoRepository() {
             return Mockito.mock(PedidoRepository.class);
+        }
+
+        @Bean
+        public NotificacionGateway notificacionGateway() {
+            return Mockito.mock(NotificacionGateway.class);
         }
     }
 
