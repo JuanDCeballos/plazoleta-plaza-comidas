@@ -92,4 +92,19 @@ public class PedidoController {
 
         return ResponseEntity.status(HttpStatus.OK).body(apiResponse);
     }
+
+    @PatchMapping("/{idPedido}/listo")
+    @PreAuthorize("hasAuthority('EMPLEADO')")
+    public ResponseEntity<ApiResponse<PedidoResponseDto>> marcarPedidoComoListo(
+            @PathVariable("idPedido") Long idPedido, @AuthenticationPrincipal UserDetails userDetails) {
+        String emailEmpleado = userDetails.getUsername();
+
+        Pedido pedidoActualizado = pedidoUseCase.marcarPedidoComoListo(emailEmpleado, idPedido);
+
+        PedidoResponseDto responseDto = pedidoMapper.toPedidoResponseDto(pedidoActualizado);
+
+        ApiResponse<PedidoResponseDto> apiResponse = new ApiResponse<>(responseDto);
+
+        return ResponseEntity.status(HttpStatus.OK).body(apiResponse);
+    }
 }
