@@ -19,6 +19,10 @@ public enum MensajesEnum {
     PEDIDO_LISTO("¡Tu pedido está listo! Tu PIN para reclamarlo es: "),
     PEDIDO_ENTREGADO_O_AUN_NO_LISTO("El pedido ya fue entregado o aún no esta listo"),
     EL_PIN_DE_ENTREGA_ES_INCORRECTO("El PIN de entrega es incorrecto."),
+    PEDIDO_EN_PREPARACION_O_CANCELADO("El pedido ya se encutran en preparacion o fue cancelado"),
+    PEDIDO_ENTREGADO_O_CANCELADO("El pedido ya fue entregado o cancelado"),
+    NO_PUEDE_CANCELAR_UN_PEDIDO_QUE_NO_LE_PERTENECE("No puede cancelar un pedido que no le pertenece"),
+    PEDIDO_EN_PREPARACION_NO_PUEDE_CANCELARSE("Lo sentimos, tu pedido ya está en preparación y no puede cancelarse"),
     ;
 
     private String mensaje;

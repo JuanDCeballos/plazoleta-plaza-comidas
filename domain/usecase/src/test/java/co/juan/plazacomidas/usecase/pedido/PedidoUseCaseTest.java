@@ -311,7 +311,29 @@ class PedidoUseCaseTest {
     }
 
     @Test
+    void asignarPedidoYCambiarEstado_retornaException_cuandoPedidoCancelado() {
+        pedido.setEstado(EstadoPedido.CANCELADO);
+
+        when(usuarioGateway.obtenerUsuarioPorCorreo(anyString())).thenReturn(Optional.of(usuario));
+        when(restauranteEmpleadoRepository.buscarByIdUsuarioEmpleado(anyLong()))
+                .thenReturn(Optional.of(restauranteEmpleado));
+        when(pedidoRepository.buscarPorId(anyLong())).thenReturn(Optional.of(pedido));
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+                pedidoUseCase.asignarPedidoYCambiarEstado(emailCliente, idPedido)
+        );
+        assertEquals(MensajesEnum.PEDIDO_EN_PREPARACION_O_CANCELADO.getMensaje(), exception.getMessage());
+
+        verify(usuarioGateway, times(1)).obtenerUsuarioPorCorreo(anyString());
+        verify(restauranteEmpleadoRepository, times(1)).buscarByIdUsuarioEmpleado(anyLong());
+        verify(pedidoRepository, times(1)).buscarPorId(anyLong());
+        verify(pedidoRepository, times(0)).actualizarPedido(any(Pedido.class));
+    }
+
+    @Test
     void marcarPedidoComoListo() {
+        pedido.setEstado(EstadoPedido.EN_PREPARACION);
+
         when(usuarioGateway.obtenerUsuarioPorCorreo(anyString())).thenReturn(Optional.of(usuario));
         when(pedidoRepository.buscarPorId(anyLong())).thenReturn(Optional.of(pedido));
         when(pedidoRepository.actualizarPedido(any(Pedido.class))).thenReturn(pedido);
@@ -352,6 +374,8 @@ class PedidoUseCaseTest {
 
     @Test
     void marcarPedidoComoListo_retornaException_cuandoNoExisteUsuarioPorId() {
+        pedido.setEstado(EstadoPedido.EN_PREPARACION);
+
         when(usuarioGateway.obtenerUsuarioPorCorreo(anyString())).thenReturn(Optional.of(usuario));
         when(pedidoRepository.buscarPorId(anyLong())).thenReturn(Optional.of(pedido));
         when(pedidoRepository.actualizarPedido(any(Pedido.class))).thenReturn(pedido);
@@ -367,6 +391,25 @@ class PedidoUseCaseTest {
         verify(pedidoRepository, times(1)).buscarPorId(anyLong());
         verify(pedidoRepository, times(1)).actualizarPedido(any(Pedido.class));
         verify(usuarioGateway, times(1)).obtenerUsuarioPorId(anyLong());
+        verify(notificacionGateway, times(0)).enviarNotificacion(anyString(), anyString());
+    }
+
+    @Test
+    void marcarPedidoComoListo_retornaException_cuandoPedidoDiferenteAEnPreparacion() {
+        pedido.setEstado(EstadoPedido.CANCELADO);
+
+        when(usuarioGateway.obtenerUsuarioPorCorreo(anyString())).thenReturn(Optional.of(usuario));
+        when(pedidoRepository.buscarPorId(anyLong())).thenReturn(Optional.of(pedido));
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+                pedidoUseCase.marcarPedidoComoListo(emailCliente, idPedido)
+        );
+        assertEquals(MensajesEnum.PEDIDO_ENTREGADO_O_CANCELADO.getMensaje(), exception.getMessage());
+
+        verify(usuarioGateway, times(1)).obtenerUsuarioPorCorreo(anyString());
+        verify(pedidoRepository, times(1)).buscarPorId(anyLong());
+        verify(pedidoRepository, times(0)).actualizarPedido(any(Pedido.class));
+        verify(usuarioGateway, times(0)).obtenerUsuarioPorId(anyLong());
         verify(notificacionGateway, times(0)).enviarNotificacion(anyString(), anyString());
     }
 
@@ -452,6 +495,58 @@ class PedidoUseCaseTest {
                 pedidoUseCase.entregarPedido(emailCliente, idPedido, pinEntregado)
         );
         assertEquals(MensajesEnum.EL_PIN_DE_ENTREGA_ES_INCORRECTO.getMensaje(), exception.getMessage());
+
+        verify(usuarioGateway, times(1)).obtenerUsuarioPorCorreo(anyString());
+        verify(pedidoRepository, times(1)).buscarPorId(anyLong());
+        verify(pedidoRepository, times(0)).actualizarPedido(any(Pedido.class));
+    }
+
+    @Test
+    void cancelarPedido() {
+        pedido.setEstado(EstadoPedido.PENDIENTE);
+
+        when(usuarioGateway.obtenerUsuarioPorCorreo(anyString())).thenReturn(Optional.of(usuario));
+        when(pedidoRepository.buscarPorId(anyLong())).thenReturn(Optional.of(pedido));
+        when(pedidoRepository.actualizarPedido(any(Pedido.class))).thenReturn(pedido);
+
+        Pedido pedidoEntregado = pedidoUseCase.cancelarPedido(emailCliente, idPedido);
+        assertNotNull(pedidoEntregado);
+        assertEquals(1L, pedidoEntregado.getIdChef());
+        assertEquals(EstadoPedido.CANCELADO, pedidoEntregado.getEstado());
+
+        verify(usuarioGateway, times(1)).obtenerUsuarioPorCorreo(anyString());
+        verify(pedidoRepository, times(1)).buscarPorId(anyLong());
+        verify(pedidoRepository, times(1)).actualizarPedido(any(Pedido.class));
+    }
+
+    @Test
+    void cancelarPedido_retornaException_cuandoClienteNoEsDueñoDelPedido() {
+        usuario.setIdUsuario(9L);
+
+        when(usuarioGateway.obtenerUsuarioPorCorreo(anyString())).thenReturn(Optional.of(usuario));
+        when(pedidoRepository.buscarPorId(anyLong())).thenReturn(Optional.of(pedido));
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+                pedidoUseCase.cancelarPedido(emailCliente, idPedido)
+        );
+        assertEquals(MensajesEnum.NO_PUEDE_CANCELAR_UN_PEDIDO_QUE_NO_LE_PERTENECE.getMensaje(), exception.getMessage());
+
+        verify(usuarioGateway, times(1)).obtenerUsuarioPorCorreo(anyString());
+        verify(pedidoRepository, times(1)).buscarPorId(anyLong());
+        verify(pedidoRepository, times(0)).actualizarPedido(any(Pedido.class));
+    }
+
+    @Test
+    void cancelarPedido_retornaException_cuandoPedidoEsDiferenteAPendiente() {
+        pedido.setEstado(EstadoPedido.EN_PREPARACION);
+
+        when(usuarioGateway.obtenerUsuarioPorCorreo(anyString())).thenReturn(Optional.of(usuario));
+        when(pedidoRepository.buscarPorId(anyLong())).thenReturn(Optional.of(pedido));
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+                pedidoUseCase.cancelarPedido(emailCliente, idPedido)
+        );
+        assertEquals(MensajesEnum.PEDIDO_EN_PREPARACION_NO_PUEDE_CANCELARSE.getMensaje(), exception.getMessage());
 
         verify(usuarioGateway, times(1)).obtenerUsuarioPorCorreo(anyString());
         verify(pedidoRepository, times(1)).buscarPorId(anyLong());
