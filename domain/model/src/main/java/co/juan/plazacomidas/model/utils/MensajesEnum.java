@@ -12,7 +12,18 @@ public enum MensajesEnum {
     CATEGORIA_NO_ENCONTRADA_POR_ID("Categoria no encontrada con el id: "),
     ROL_PROPIETARIO("El rol debe ser propietario"),
     NO_TIENE_PERMISOS_PARA_ASIGNAR_EMPLEADO("No tienes permiso para asignar empleados a este restaurante."),
-    ROL_EMPLEADO("El rol debe ser empleado");
+    ROL_EMPLEADO("El rol debe ser empleado"),
+    PEDIDO_NO_ENCONTRADO_POR_ID("Pedido no encontrado con id: "),
+    NO_TIENE_PERMISOS_PARA_ACTUALIZAR_PEDIDO("No tienes permiso para modificar este pedido."),
+    NO_PUEDE_MARCAR_COMO_LIST_UN_PEDIDO_AL_CUAL_NO_ESTA_ASIGNADO("No puede marcar un pedido como listo al cual no esta asignado"),
+    PEDIDO_LISTO("¡Tu pedido está listo! Tu PIN para reclamarlo es: "),
+    PEDIDO_ENTREGADO_O_AUN_NO_LISTO("El pedido ya fue entregado o aún no esta listo"),
+    EL_PIN_DE_ENTREGA_ES_INCORRECTO("El PIN de entrega es incorrecto."),
+    PEDIDO_EN_PREPARACION_O_CANCELADO("El pedido ya se encutran en preparacion o fue cancelado"),
+    PEDIDO_ENTREGADO_O_CANCELADO("El pedido ya fue entregado o cancelado"),
+    NO_PUEDE_CANCELAR_UN_PEDIDO_QUE_NO_LE_PERTENECE("No puede cancelar un pedido que no le pertenece"),
+    PEDIDO_EN_PREPARACION_NO_PUEDE_CANCELARSE("Lo sentimos, tu pedido ya está en preparación y no puede cancelarse"),
+    ;
 
     private String mensaje;
 

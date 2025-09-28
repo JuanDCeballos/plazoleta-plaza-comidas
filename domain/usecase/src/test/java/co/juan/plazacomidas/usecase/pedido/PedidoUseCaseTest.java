@@ -1,6 +1,7 @@
 package co.juan.plazacomidas.usecase.pedido;
 
 import co.juan.plazacomidas.model.exceptions.ResourceNotFoundException;
+import co.juan.plazacomidas.model.notificacion.NotificacionGateway;
 import co.juan.plazacomidas.model.pagina.Pagina;
 import co.juan.plazacomidas.model.pedido.Pedido;
 import co.juan.plazacomidas.model.pedido.gateways.PedidoRepository;
@@ -13,6 +14,7 @@ import co.juan.plazacomidas.model.restauranteempleado.gateways.RestauranteEmplea
 import co.juan.plazacomidas.model.usuario.Usuario;
 import co.juan.plazacomidas.model.usuario.gateways.UsuarioGateway;
 import co.juan.plazacomidas.model.utils.EstadoPedido;
+import co.juan.plazacomidas.model.utils.MensajesEnum;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -52,6 +54,9 @@ class PedidoUseCaseTest {
     @Mock
     RestauranteEmpleadoRepository restauranteEmpleadoRepository;
 
+    @Mock
+    NotificacionGateway notificacionGateway;
+
     private Pedido pedido;
     private Usuario usuario;
     private Plato plato;
@@ -59,6 +64,8 @@ class PedidoUseCaseTest {
     private Pagina<Pedido> pedidosPaginadosYFiltrados;
 
     private final String emailCliente = "juan.ceballos@correo.com.co";
+    private final Long idPedido = 1L;
+    private final String pinEntregado = "0581";
 
     @BeforeEach
     void initMocks() {
@@ -74,6 +81,7 @@ class PedidoUseCaseTest {
         pedido.setFecha(LocalDate.of(2025, 9, 24));
         pedido.setEstado(EstadoPedido.PENDIENTE);
         pedido.setIdChef(1L);
+        pedido.setPinEntrega("0581");
         pedido.setIdRestaurante(1L);
         pedido.setPlatos(pedidoPlatoLst);
 
@@ -243,5 +251,305 @@ class PedidoUseCaseTest {
         verify(restauranteEmpleadoRepository, times(1)).buscarByIdUsuarioEmpleado(anyLong());
         verify(pedidoRepository, times(1)).listarPedidosPorRestauranteYEstado(
                 anyLong(), any(), anyInt(), anyInt());
+    }
+
+    @Test
+    void asignarPedidoYCambiarEstado() {
+        when(usuarioGateway.obtenerUsuarioPorCorreo(anyString())).thenReturn(Optional.of(usuario));
+        when(restauranteEmpleadoRepository.buscarByIdUsuarioEmpleado(anyLong()))
+                .thenReturn(Optional.of(restauranteEmpleado));
+        when(pedidoRepository.buscarPorId(anyLong())).thenReturn(Optional.of(pedido));
+        when(pedidoRepository.actualizarPedido(any(Pedido.class))).thenReturn(pedido);
+
+        Pedido pedidoAsignadoYActualizado = pedidoUseCase.asignarPedidoYCambiarEstado(emailCliente, idPedido);
+        assertNotNull(pedidoAsignadoYActualizado);
+        assertEquals(1L, pedidoAsignadoYActualizado.getIdChef());
+        assertEquals(EstadoPedido.EN_PREPARACION, pedidoAsignadoYActualizado.getEstado());
+
+        verify(usuarioGateway, times(1)).obtenerUsuarioPorCorreo(anyString());
+        verify(restauranteEmpleadoRepository, times(1)).buscarByIdUsuarioEmpleado(anyLong());
+        verify(pedidoRepository, times(1)).buscarPorId(anyLong());
+        verify(pedidoRepository, times(1)).actualizarPedido(any(Pedido.class));
+    }
+
+    @Test
+    void asignarPedidoYCambiarEstado_retornaException_cuandoNoExistePedido() {
+        when(usuarioGateway.obtenerUsuarioPorCorreo(anyString())).thenReturn(Optional.of(usuario));
+        when(restauranteEmpleadoRepository.buscarByIdUsuarioEmpleado(anyLong()))
+                .thenReturn(Optional.of(restauranteEmpleado));
+        when(pedidoRepository.buscarPorId(anyLong())).thenReturn(Optional.empty());
+
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () ->
+                pedidoUseCase.asignarPedidoYCambiarEstado(emailCliente, idPedido)
+        );
+        assertEquals(MensajesEnum.PEDIDO_NO_ENCONTRADO_POR_ID.getMensaje() + idPedido, exception.getMessage());
+
+        verify(usuarioGateway, times(1)).obtenerUsuarioPorCorreo(anyString());
+        verify(restauranteEmpleadoRepository, times(1)).buscarByIdUsuarioEmpleado(anyLong());
+        verify(pedidoRepository, times(1)).buscarPorId(anyLong());
+        verify(pedidoRepository, times(0)).actualizarPedido(any(Pedido.class));
+    }
+
+    @Test
+    void asignarPedidoYCambiarEstado_retornaException_cuandoNoCoincidenLosRestaurantes() {
+        pedido.setIdRestaurante(5L);
+
+        when(usuarioGateway.obtenerUsuarioPorCorreo(anyString())).thenReturn(Optional.of(usuario));
+        when(restauranteEmpleadoRepository.buscarByIdUsuarioEmpleado(anyLong()))
+                .thenReturn(Optional.of(restauranteEmpleado));
+        when(pedidoRepository.buscarPorId(anyLong())).thenReturn(Optional.of(pedido));
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+                pedidoUseCase.asignarPedidoYCambiarEstado(emailCliente, idPedido)
+        );
+        assertEquals(MensajesEnum.NO_TIENE_PERMISOS_PARA_ACTUALIZAR_PEDIDO.getMensaje(), exception.getMessage());
+
+        verify(usuarioGateway, times(1)).obtenerUsuarioPorCorreo(anyString());
+        verify(restauranteEmpleadoRepository, times(1)).buscarByIdUsuarioEmpleado(anyLong());
+        verify(pedidoRepository, times(1)).buscarPorId(anyLong());
+        verify(pedidoRepository, times(0)).actualizarPedido(any(Pedido.class));
+    }
+
+    @Test
+    void asignarPedidoYCambiarEstado_retornaException_cuandoPedidoCancelado() {
+        pedido.setEstado(EstadoPedido.CANCELADO);
+
+        when(usuarioGateway.obtenerUsuarioPorCorreo(anyString())).thenReturn(Optional.of(usuario));
+        when(restauranteEmpleadoRepository.buscarByIdUsuarioEmpleado(anyLong()))
+                .thenReturn(Optional.of(restauranteEmpleado));
+        when(pedidoRepository.buscarPorId(anyLong())).thenReturn(Optional.of(pedido));
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+                pedidoUseCase.asignarPedidoYCambiarEstado(emailCliente, idPedido)
+        );
+        assertEquals(MensajesEnum.PEDIDO_EN_PREPARACION_O_CANCELADO.getMensaje(), exception.getMessage());
+
+        verify(usuarioGateway, times(1)).obtenerUsuarioPorCorreo(anyString());
+        verify(restauranteEmpleadoRepository, times(1)).buscarByIdUsuarioEmpleado(anyLong());
+        verify(pedidoRepository, times(1)).buscarPorId(anyLong());
+        verify(pedidoRepository, times(0)).actualizarPedido(any(Pedido.class));
+    }
+
+    @Test
+    void marcarPedidoComoListo() {
+        pedido.setEstado(EstadoPedido.EN_PREPARACION);
+
+        when(usuarioGateway.obtenerUsuarioPorCorreo(anyString())).thenReturn(Optional.of(usuario));
+        when(pedidoRepository.buscarPorId(anyLong())).thenReturn(Optional.of(pedido));
+        when(pedidoRepository.actualizarPedido(any(Pedido.class))).thenReturn(pedido);
+        when(usuarioGateway.obtenerUsuarioPorId(anyLong())).thenReturn(Optional.of(usuario));
+        doNothing().when(notificacionGateway).enviarNotificacion(anyString(), anyString());
+
+        Pedido pedidoAsignadoYActualizado = pedidoUseCase.marcarPedidoComoListo(emailCliente, idPedido);
+        assertNotNull(pedidoAsignadoYActualizado);
+        assertEquals(1L, pedidoAsignadoYActualizado.getIdChef());
+        assertEquals(EstadoPedido.LISTO, pedidoAsignadoYActualizado.getEstado());
+
+        verify(usuarioGateway, times(1)).obtenerUsuarioPorCorreo(anyString());
+        verify(pedidoRepository, times(1)).buscarPorId(anyLong());
+        verify(pedidoRepository, times(1)).actualizarPedido(any(Pedido.class));
+        verify(usuarioGateway, times(1)).obtenerUsuarioPorId(anyLong());
+        verify(notificacionGateway, times(1)).enviarNotificacion(anyString(), anyString());
+    }
+
+    @Test
+    void marcarPedidoComoListo_retornaException_cuandoEmpleadoNoCoincide() {
+        pedido.setIdChef(5L);
+
+        when(usuarioGateway.obtenerUsuarioPorCorreo(anyString())).thenReturn(Optional.of(usuario));
+        when(pedidoRepository.buscarPorId(anyLong())).thenReturn(Optional.of(pedido));
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+                pedidoUseCase.marcarPedidoComoListo(emailCliente, idPedido)
+        );
+        assertEquals(
+                MensajesEnum.NO_PUEDE_MARCAR_COMO_LIST_UN_PEDIDO_AL_CUAL_NO_ESTA_ASIGNADO.getMensaje(), exception.getMessage());
+
+        verify(usuarioGateway, times(1)).obtenerUsuarioPorCorreo(anyString());
+        verify(pedidoRepository, times(1)).buscarPorId(anyLong());
+        verify(pedidoRepository, times(0)).actualizarPedido(any(Pedido.class));
+        verify(usuarioGateway, times(0)).obtenerUsuarioPorId(anyLong());
+        verify(notificacionGateway, times(0)).enviarNotificacion(anyString(), anyString());
+    }
+
+    @Test
+    void marcarPedidoComoListo_retornaException_cuandoNoExisteUsuarioPorId() {
+        pedido.setEstado(EstadoPedido.EN_PREPARACION);
+
+        when(usuarioGateway.obtenerUsuarioPorCorreo(anyString())).thenReturn(Optional.of(usuario));
+        when(pedidoRepository.buscarPorId(anyLong())).thenReturn(Optional.of(pedido));
+        when(pedidoRepository.actualizarPedido(any(Pedido.class))).thenReturn(pedido);
+        when(usuarioGateway.obtenerUsuarioPorId(anyLong())).thenReturn(Optional.empty());
+
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () ->
+                pedidoUseCase.marcarPedidoComoListo(emailCliente, idPedido)
+        );
+        assertEquals(
+                MensajesEnum.USUARIO_NO_ENCONTRADO_POR_ID.getMensaje() + pedido.getIdCliente(), exception.getMessage());
+
+        verify(usuarioGateway, times(1)).obtenerUsuarioPorCorreo(anyString());
+        verify(pedidoRepository, times(1)).buscarPorId(anyLong());
+        verify(pedidoRepository, times(1)).actualizarPedido(any(Pedido.class));
+        verify(usuarioGateway, times(1)).obtenerUsuarioPorId(anyLong());
+        verify(notificacionGateway, times(0)).enviarNotificacion(anyString(), anyString());
+    }
+
+    @Test
+    void marcarPedidoComoListo_retornaException_cuandoPedidoDiferenteAEnPreparacion() {
+        pedido.setEstado(EstadoPedido.CANCELADO);
+
+        when(usuarioGateway.obtenerUsuarioPorCorreo(anyString())).thenReturn(Optional.of(usuario));
+        when(pedidoRepository.buscarPorId(anyLong())).thenReturn(Optional.of(pedido));
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+                pedidoUseCase.marcarPedidoComoListo(emailCliente, idPedido)
+        );
+        assertEquals(MensajesEnum.PEDIDO_ENTREGADO_O_CANCELADO.getMensaje(), exception.getMessage());
+
+        verify(usuarioGateway, times(1)).obtenerUsuarioPorCorreo(anyString());
+        verify(pedidoRepository, times(1)).buscarPorId(anyLong());
+        verify(pedidoRepository, times(0)).actualizarPedido(any(Pedido.class));
+        verify(usuarioGateway, times(0)).obtenerUsuarioPorId(anyLong());
+        verify(notificacionGateway, times(0)).enviarNotificacion(anyString(), anyString());
+    }
+
+    @Test
+    void entregarPedido() {
+        pedido.setEstado(EstadoPedido.LISTO);
+
+        when(usuarioGateway.obtenerUsuarioPorCorreo(anyString())).thenReturn(Optional.of(usuario));
+        when(pedidoRepository.buscarPorId(anyLong())).thenReturn(Optional.of(pedido));
+        when(pedidoRepository.actualizarPedido(any(Pedido.class))).thenReturn(pedido);
+
+        Pedido pedidoEntregado = pedidoUseCase.entregarPedido(emailCliente, idPedido, pinEntregado);
+        assertNotNull(pedidoEntregado);
+        assertEquals(1L, pedidoEntregado.getIdChef());
+        assertEquals(EstadoPedido.ENTREGADO, pedidoEntregado.getEstado());
+
+        verify(usuarioGateway, times(1)).obtenerUsuarioPorCorreo(anyString());
+        verify(pedidoRepository, times(1)).buscarPorId(anyLong());
+        verify(pedidoRepository, times(1)).actualizarPedido(any(Pedido.class));
+    }
+
+    @Test
+    void entregarPedido_retornaException_cuandoEmpleadosNoCoinciden() {
+        pedido.setIdChef(5L);
+
+        when(usuarioGateway.obtenerUsuarioPorCorreo(anyString())).thenReturn(Optional.of(usuario));
+        when(pedidoRepository.buscarPorId(anyLong())).thenReturn(Optional.of(pedido));
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+                pedidoUseCase.entregarPedido(emailCliente, idPedido, pinEntregado)
+        );
+        assertEquals(MensajesEnum.NO_PUEDE_MARCAR_COMO_LIST_UN_PEDIDO_AL_CUAL_NO_ESTA_ASIGNADO.getMensaje(),
+                exception.getMessage());
+
+        verify(usuarioGateway, times(1)).obtenerUsuarioPorCorreo(anyString());
+        verify(pedidoRepository, times(1)).buscarPorId(anyLong());
+        verify(pedidoRepository, times(0)).actualizarPedido(any(Pedido.class));
+    }
+
+    @Test
+    void entregarPedido_retornaException_cuandoPedidoYaFueEntregado() {
+        pedido.setEstado(EstadoPedido.ENTREGADO);
+
+        when(usuarioGateway.obtenerUsuarioPorCorreo(anyString())).thenReturn(Optional.of(usuario));
+        when(pedidoRepository.buscarPorId(anyLong())).thenReturn(Optional.of(pedido));
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+                pedidoUseCase.entregarPedido(emailCliente, idPedido, pinEntregado)
+        );
+        assertEquals(MensajesEnum.PEDIDO_ENTREGADO_O_AUN_NO_LISTO.getMensaje(), exception.getMessage());
+
+        verify(usuarioGateway, times(1)).obtenerUsuarioPorCorreo(anyString());
+        verify(pedidoRepository, times(1)).buscarPorId(anyLong());
+        verify(pedidoRepository, times(0)).actualizarPedido(any(Pedido.class));
+    }
+
+    @Test
+    void entregarPedido_retornaException_cuandoPedidoNoEstaListo() {
+        pedido.setEstado(EstadoPedido.PENDIENTE);
+
+        when(usuarioGateway.obtenerUsuarioPorCorreo(anyString())).thenReturn(Optional.of(usuario));
+        when(pedidoRepository.buscarPorId(anyLong())).thenReturn(Optional.of(pedido));
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+                pedidoUseCase.entregarPedido(emailCliente, idPedido, pinEntregado)
+        );
+        assertEquals(MensajesEnum.PEDIDO_ENTREGADO_O_AUN_NO_LISTO.getMensaje(), exception.getMessage());
+
+        verify(usuarioGateway, times(1)).obtenerUsuarioPorCorreo(anyString());
+        verify(pedidoRepository, times(1)).buscarPorId(anyLong());
+        verify(pedidoRepository, times(0)).actualizarPedido(any(Pedido.class));
+    }
+
+    @Test
+    void entregarPedido_retornaException_cuandoPinEntregadoNoCoincide() {
+        pedido.setEstado(EstadoPedido.LISTO);
+        pedido.setPinEntrega("0000");
+
+        when(usuarioGateway.obtenerUsuarioPorCorreo(anyString())).thenReturn(Optional.of(usuario));
+        when(pedidoRepository.buscarPorId(anyLong())).thenReturn(Optional.of(pedido));
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+                pedidoUseCase.entregarPedido(emailCliente, idPedido, pinEntregado)
+        );
+        assertEquals(MensajesEnum.EL_PIN_DE_ENTREGA_ES_INCORRECTO.getMensaje(), exception.getMessage());
+
+        verify(usuarioGateway, times(1)).obtenerUsuarioPorCorreo(anyString());
+        verify(pedidoRepository, times(1)).buscarPorId(anyLong());
+        verify(pedidoRepository, times(0)).actualizarPedido(any(Pedido.class));
+    }
+
+    @Test
+    void cancelarPedido() {
+        pedido.setEstado(EstadoPedido.PENDIENTE);
+
+        when(usuarioGateway.obtenerUsuarioPorCorreo(anyString())).thenReturn(Optional.of(usuario));
+        when(pedidoRepository.buscarPorId(anyLong())).thenReturn(Optional.of(pedido));
+        when(pedidoRepository.actualizarPedido(any(Pedido.class))).thenReturn(pedido);
+
+        Pedido pedidoEntregado = pedidoUseCase.cancelarPedido(emailCliente, idPedido);
+        assertNotNull(pedidoEntregado);
+        assertEquals(1L, pedidoEntregado.getIdChef());
+        assertEquals(EstadoPedido.CANCELADO, pedidoEntregado.getEstado());
+
+        verify(usuarioGateway, times(1)).obtenerUsuarioPorCorreo(anyString());
+        verify(pedidoRepository, times(1)).buscarPorId(anyLong());
+        verify(pedidoRepository, times(1)).actualizarPedido(any(Pedido.class));
+    }
+
+    @Test
+    void cancelarPedido_retornaException_cuandoClienteNoEsDueñoDelPedido() {
+        usuario.setIdUsuario(9L);
+
+        when(usuarioGateway.obtenerUsuarioPorCorreo(anyString())).thenReturn(Optional.of(usuario));
+        when(pedidoRepository.buscarPorId(anyLong())).thenReturn(Optional.of(pedido));
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+                pedidoUseCase.cancelarPedido(emailCliente, idPedido)
+        );
+        assertEquals(MensajesEnum.NO_PUEDE_CANCELAR_UN_PEDIDO_QUE_NO_LE_PERTENECE.getMensaje(), exception.getMessage());
+
+        verify(usuarioGateway, times(1)).obtenerUsuarioPorCorreo(anyString());
+        verify(pedidoRepository, times(1)).buscarPorId(anyLong());
+        verify(pedidoRepository, times(0)).actualizarPedido(any(Pedido.class));
+    }
+
+    @Test
+    void cancelarPedido_retornaException_cuandoPedidoEsDiferenteAPendiente() {
+        pedido.setEstado(EstadoPedido.EN_PREPARACION);
+
+        when(usuarioGateway.obtenerUsuarioPorCorreo(anyString())).thenReturn(Optional.of(usuario));
+        when(pedidoRepository.buscarPorId(anyLong())).thenReturn(Optional.of(pedido));
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+                pedidoUseCase.cancelarPedido(emailCliente, idPedido)
+        );
+        assertEquals(MensajesEnum.PEDIDO_EN_PREPARACION_NO_PUEDE_CANCELARSE.getMensaje(), exception.getMessage());
+
+        verify(usuarioGateway, times(1)).obtenerUsuarioPorCorreo(anyString());
+        verify(pedidoRepository, times(1)).buscarPorId(anyLong());
+        verify(pedidoRepository, times(0)).actualizarPedido(any(Pedido.class));
     }
 }

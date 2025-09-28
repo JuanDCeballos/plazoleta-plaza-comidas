@@ -33,6 +33,8 @@ public class PedidoEntity {
     @Column(name = "id_chef")
     private Long idChef;
 
+    private String pinEntrega;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_restaurante", nullable = false)
     private RestauranteEntity restaurante;

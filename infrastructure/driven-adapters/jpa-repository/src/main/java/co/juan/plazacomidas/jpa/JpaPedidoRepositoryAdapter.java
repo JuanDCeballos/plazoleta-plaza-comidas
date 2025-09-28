@@ -41,6 +41,12 @@ public class JpaPedidoRepositoryAdapter extends AdapterOperations<Pedido, Pedido
     }
 
     @Override
+    public Optional<Pedido> buscarPorId(Long idPedido) {
+        return repository.findById(idPedido)
+                .map(pedidoJpaMapper::toDomain);
+    }
+
+    @Override
     public Pedido guardarPedido(Pedido pedido) {
         PedidoEntity pedidoEntity = pedidoJpaMapper.toEntity(pedido);
 
@@ -66,6 +72,20 @@ public class JpaPedidoRepositoryAdapter extends AdapterOperations<Pedido, Pedido
         PedidoEntity pedidoGuardado = repository.save(pedidoEntity);
 
         return pedidoJpaMapper.toDomain(pedidoGuardado);
+    }
+
+    @Override
+    public Pedido actualizarPedido(Pedido pedido) {
+        PedidoEntity pedidoExistente = repository.findById(pedido.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("No se puede actualizar un pedido que no existe. Id: " + pedido.getId()));
+
+        pedidoExistente.setEstado(pedido.getEstado());
+        pedidoExistente.setIdChef(pedido.getIdChef());
+        pedidoExistente.setPinEntrega(pedido.getPinEntrega());
+
+        PedidoEntity pedidoActualizado = repository.save(pedidoExistente);
+
+        return pedidoJpaMapper.toDomain(pedidoActualizado);
     }
 
     @Override
